@@ -113,6 +113,23 @@
           "y": 0.5904936814027724
         }
       }
+    },
+    {
+      "id": "mask-1769168694794",
+      "name": "My Mask",
+      "image": "durrell-masks/images/mask-1769168694794.png",
+      "anchors": {
+        "leftEye": {
+          "x": 0.44941282746160793,
+          "y": 0.5853658536585367
+        },
+        "rightEye": {
+          "x": 0.6698283649503162,
+          "y": 0.5833333333333334
+        },
+        "leftMouth": null,
+        "rightMouth": null
+      }
     }
   ]
 }

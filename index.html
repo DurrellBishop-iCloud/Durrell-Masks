@@ -685,14 +685,13 @@
     <div class="modal-overlay hidden" id="groupMenuModal">
         <div class="modal">
             <p style="text-align:center;margin-bottom:16px;">
-                <span style="color:#888;">Group:</span>
+                <span style="color:#888;">Current:</span>
                 <span id="currentGroupDisplay" style="color:#e94560;font-weight:bold;"></span>
-                <span id="groupReadOnly" style="color:#666;font-size:12px;"></span>
             </p>
 
-            <button class="modal-btn" id="newGroupBtn">
-                <span class="icon">✨</span>
-                New Group
+            <button class="modal-btn" id="publicGroupBtn">
+                <span class="icon">⭐</span>
+                Starter Masks
             </button>
 
             <button class="modal-btn" id="localGroupBtn">
@@ -700,15 +699,20 @@
                 Local
             </button>
 
-            <div id="savedGroupsList"></div>
-
-            <div class="modal-divider" id="shareSection"></div>
-            <button class="modal-btn" id="shareGroupBtn" style="display:none;">
-                <span class="icon">📤</span>
-                Share Group
+            <button class="modal-btn" id="newGroupBtn">
+                <span class="icon">✨</span>
+                New Group
             </button>
 
-            <button class="modal-btn primary" id="groupActionBtn">Close</button>
+            <div id="savedGroupsList"></div>
+
+            <div class="modal-divider" id="shareSection" style="display:none;"></div>
+            <button class="modal-btn" id="shareGroupBtn" style="display:none;">
+                <span class="icon">📤</span>
+                Share This Group
+            </button>
+
+            <button class="modal-cancel" id="groupCloseBtn">Close</button>
         </div>
     </div>
     <div class="version-tag">v5.1-mouth</div>
@@ -3170,36 +3174,33 @@
         function showGroupMenu() {
             const modal = document.getElementById('groupMenuModal');
             const groupDisplay = document.getElementById('currentGroupDisplay');
-            const readOnlyLabel = document.getElementById('groupReadOnly');
-            const actionBtn = document.getElementById('groupActionBtn');
             const shareBtn = document.getElementById('shareGroupBtn');
             const shareSection = document.getElementById('shareSection');
             const savedGroupsList = document.getElementById('savedGroupsList');
+            const publicBtn = document.getElementById('publicGroupBtn');
             const localBtn = document.getElementById('localGroupBtn');
 
-            // Show current group
-            groupDisplay.textContent = currentGroup === 'public' ? 'Public' : currentGroup;
-
-            // Public group is read-only
+            // Show current group name
             if (currentGroup === 'public') {
-                readOnlyLabel.textContent = '(view only)';
-                actionBtn.textContent = 'Close';
-                shareBtn.style.display = 'none';
-                shareSection.style.display = 'none';
+                groupDisplay.textContent = 'Starter Masks';
+            } else if (currentGroup === 'local') {
+                groupDisplay.textContent = 'Local';
             } else {
-                readOnlyLabel.textContent = '';
-                actionBtn.textContent = 'Make Mask';
-                if (currentGroup !== 'local') {
-                    shareBtn.style.display = 'flex';
-                    shareSection.style.display = 'block';
-                } else {
-                    shareBtn.style.display = 'none';
-                    shareSection.style.display = 'none';
-                }
+                groupDisplay.textContent = currentGroup;
             }
 
-            // Highlight local button if selected
+            // Highlight current selection
+            publicBtn.classList.toggle('selected', currentGroup === 'public');
             localBtn.classList.toggle('selected', currentGroup === 'local');
+
+            // Show share button only for shared groups (not public, not local)
+            if (currentGroup !== 'public' && currentGroup !== 'local') {
+                shareBtn.style.display = 'flex';
+                shareSection.style.display = 'block';
+            } else {
+                shareBtn.style.display = 'none';
+                shareSection.style.display = 'none';
+            }
 
             // Build saved groups list
             const groups = getSavedGroups();
@@ -3213,7 +3214,7 @@
 
                 savedGroupsList.querySelectorAll('[data-group]').forEach(btn => {
                     btn.addEventListener('click', () => {
-                        switchToGroup(btn.dataset.group);
+                        selectGroupAndMake(btn.dataset.group);
                     });
                 });
             } else {
@@ -3227,15 +3228,29 @@
             document.getElementById('groupMenuModal').classList.add('hidden');
         }
 
+        // Select a group and go to make mask
+        function selectGroupAndMake(groupName) {
+            hideGroupMenu();
+            saveGroupToStorage(groupName);
+            setLastGroup(groupName);
+            // Reload with new group and go to capture view
+            window.location.href = `?group=${groupName}#capture`;
+        }
+
         // Gear button shows group menu
         document.getElementById('gearBtn').addEventListener('click', showGroupMenu);
 
-        document.getElementById('groupActionBtn').addEventListener('click', () => {
+        document.getElementById('groupCloseBtn').addEventListener('click', hideGroupMenu);
+
+        document.getElementById('publicGroupBtn').addEventListener('click', () => {
             hideGroupMenu();
             if (currentGroup !== 'public') {
-                // Go to Make Mask view (Capture tab)
-                switchView('capture');
+                window.location.href = '?group=public';
             }
+        });
+
+        document.getElementById('localGroupBtn').addEventListener('click', () => {
+            selectGroupAndMake('local');
         });
 
         document.getElementById('newGroupBtn').addEventListener('click', () => {
@@ -3246,12 +3261,7 @@
                 alert('Please use only letters and numbers');
                 return;
             }
-            saveGroupToStorage(safeName);
-            switchToGroup(safeName);
-        });
-
-        document.getElementById('localGroupBtn').addEventListener('click', () => {
-            switchToGroup('local');
+            selectGroupAndMake(safeName);
         });
 
         document.getElementById('shareGroupBtn').addEventListener('click', () => {
@@ -3327,6 +3337,13 @@
                 await initializeFaceLandmarker();
                 // Load a random mask after initialization
                 await loadRandomMask();
+
+                // Check if we should go to capture view (from group selection)
+                if (window.location.hash === '#capture') {
+                    switchView('capture');
+                    // Clear the hash
+                    history.replaceState(null, '', window.location.pathname + window.location.search);
+                }
             } catch (error) {
                 console.error('Initialization error:', error);
                 updateStatus('track', 'Error loading: ' + error.message);

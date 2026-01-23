@@ -850,9 +850,12 @@
         // Worker config for group-based mask storage
         const WORKER_URL = 'https://mask-worker.dbgh.workers.dev';
 
-        // Get group from URL param (e.g., ?group=family)
+        // Get group from URL param, or use last group, or default to local
         const urlParams = new URLSearchParams(window.location.search);
-        const currentGroup = urlParams.get('group') || 'public';
+        const currentGroup = urlParams.get('group') || localStorage.getItem('mask_last_group') || 'local';
+
+        // Save current group as last used
+        localStorage.setItem('mask_last_group', currentGroup);
 
         // Update header bar with group name
         function updateHeader() {

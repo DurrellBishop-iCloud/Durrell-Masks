@@ -38,28 +38,15 @@
             flex-direction: column;
         }
 
-        /* Tab navigation */
-        .tabs {
-            display: flex;
+        /* Header bar */
+        .header-bar {
             background: #0f0f1a;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 12px;
+            padding: 8px 16px;
             text-align: center;
-            background: #16213e;
-            border: none;
-            color: #888;
             font-size: 14px;
+            color: #e94560;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tab.active {
-            background: #e94560;
-            color: white;
+            border-bottom: 1px solid #1a1a2e;
         }
 
         /* View containers */
@@ -528,12 +515,6 @@
             background: rgba(0,0,0,0.7);
         }
 
-        .ui-hidden .tabs,
-        .ui-hidden .controls,
-        .ui-hidden .version-tag {
-            display: none !important;
-        }
-
         /* Save Modal */
         .modal-overlay {
             position: fixed;
@@ -700,11 +681,8 @@
     <div class="version-tag">v5.1-mouth</div>
     <div id="debugInfo" style="display:none;position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.8);color:#0f0;font-family:monospace;font-size:12px;padding:10px;z-index:9999;max-width:90%;"></div>
     <div class="container">
-        <!-- Tab Navigation -->
-        <div class="tabs">
-            <button class="tab active" data-view="track">Face Track</button>
-            <button class="tab" data-view="capture">Create Mask</button>
-        </div>
+        <!-- Header showing current group -->
+        <div class="header-bar" id="headerBar">Public Masks</div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -882,6 +860,21 @@
         const urlParams = new URLSearchParams(window.location.search);
         const currentGroup = urlParams.get('group') || 'public';
 
+        // Update header bar with group name
+        function updateHeader() {
+            const header = document.getElementById('headerBar');
+            if (currentGroup === 'public') {
+                header.textContent = 'Public Masks';
+            } else if (currentGroup === 'local') {
+                header.textContent = 'Local Masks';
+            } else {
+                // Capitalize first letter and format nicely
+                const displayName = currentGroup.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                header.textContent = displayName;
+            }
+        }
+        updateHeader();
+
         // Legacy constants (kept for compatibility)
         const GITHUB_REPO = 'DurrellBishop-iCloud/m';
         const GITHUB_BRANCH = 'main';
@@ -890,18 +883,7 @@
         // TAB NAVIGATION
         // ============================================
 
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const viewId = tab.dataset.view;
-                switchView(viewId);
-            });
-        });
-
         function switchView(viewId) {
-            // Update tabs
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[data-view="${viewId}"]`).classList.add('active');
-
             // Update views
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById(viewId + 'View').classList.add('active');
@@ -2857,9 +2839,12 @@
             link.href = previewCanvas.toDataURL('image/png');
             link.click();
 
-            // Redraw markers
-            drawEyePointMarkers();
             updateStatus('capture', 'Mask saved to your device!');
+
+            // Return to play mode after a brief delay
+            setTimeout(() => {
+                switchView('track');
+            }, 1000);
         }
 
         // Show create group prompt
@@ -2922,11 +2907,15 @@
                 saveGroupToStorage(groupName);
                 setLastGroup(groupName);
 
-                // Redraw markers
-                drawEyePointMarkers();
+                // Clear for next time
                 galleryManifest = null;
 
                 updateStatus('capture', `"${maskName}" saved to ${groupName}!`);
+
+                // Return to play mode after a brief delay
+                setTimeout(() => {
+                    switchView('track');
+                }, 1000);
 
             } catch (error) {
                 console.error('Save error:', error);
@@ -3234,7 +3223,8 @@
                 alert('Please use only letters and numbers');
                 return;
             }
-            selectGroupAndMake(safeName);
+            // Add "-masks" suffix to the group name
+            selectGroupAndMake(safeName + '-masks');
         });
 
         document.getElementById('shareGroupBtn').addEventListener('click', () => {

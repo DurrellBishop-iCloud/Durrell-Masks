@@ -869,9 +869,9 @@
         }
         updateHeader();
 
-        // Make Mask button - go to capture view
+        // Make Mask button - opens group menu to choose where to save
         document.getElementById('makeMaskBtn').addEventListener('click', () => {
-            switchView('capture');
+            showGroupMenu();
         });
 
         // Legacy constants (kept for compatibility)

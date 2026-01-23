@@ -948,8 +948,10 @@
             updateStatus('track', 'Model loaded - Starting camera...');
             hideLoading();
 
-            // Auto-start tracking
-            startTracking();
+            // Auto-start tracking only if we're in track view
+            if (currentView === 'track') {
+                startTracking();
+            }
         }
 
         async function startTracking() {

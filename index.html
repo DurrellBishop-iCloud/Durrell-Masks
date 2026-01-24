@@ -786,9 +786,12 @@
 
     <script>
         document.getElementById('loadingText').textContent = 'Starting...';
+        window.onerror = function(msg, url, line) {
+            document.getElementById('loadingText').textContent = 'JS Error: ' + msg;
+        };
     </script>
 
-    <script type="module">
+    <script type="module" onerror="document.getElementById('loadingText').textContent='Module failed'">
         document.getElementById('loadingText').textContent = 'Loading...';
         const { FaceLandmarker, FilesetResolver } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/vision_bundle.mjs');
         document.getElementById('loadingText').textContent = 'Libraries loaded...';

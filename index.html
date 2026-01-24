@@ -3241,12 +3241,27 @@
             editingMaskGroup = null;
             document.getElementById('retakeBtn').textContent = 'Retake';
 
+            // Hide edit-specific UI
+            document.getElementById('editControls').classList.add('hidden');
+            document.getElementById('toleranceRow').classList.add('hidden');
+            document.getElementById('pointsInfo').classList.add('hidden');
+            eyePointMode = false;
+            eraseMode = false;
+
             updateStatus('capture', `"${maskName}" saved to Local-masks!`);
+
+            // Redraw markers so user sees clean state while waiting
+            drawEyePointMarkers();
 
             // Return to play mode after a brief delay and reload mask
             setTimeout(async () => {
-                switchView('track');
-                await reloadCurrentMask();
+                try {
+                    switchView('track');
+                    await reloadCurrentMask();
+                } catch (error) {
+                    console.error('Error after save:', error);
+                    switchView('track');
+                }
             }, 1000);
         }
 

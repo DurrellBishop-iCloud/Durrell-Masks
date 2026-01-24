@@ -41,32 +41,35 @@
         /* Header bar */
         .header-bar {
             background: #0f0f1a;
-            padding: 8px 16px;
+            padding: 8px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 14px;
             border-bottom: 1px solid #1a1a2e;
+            gap: 8px;
         }
 
         .header-bar .group-name {
-            color: #e94560;
+            color: #888;
             font-weight: 600;
             cursor: pointer;
+            flex: 1;
         }
 
-        .header-bar .make-mask-btn {
+        .header-bar .header-btn {
             background: none;
-            border: 1px solid #e94560;
-            color: #e94560;
+            border: 1px solid #888;
+            color: #888;
             padding: 4px 12px;
             border-radius: 4px;
             font-size: 12px;
             cursor: pointer;
+            white-space: nowrap;
         }
 
-        .header-bar .make-mask-btn:active {
-            background: #e94560;
+        .header-bar .header-btn:active {
+            background: #888;
             color: white;
         }
 
@@ -157,11 +160,11 @@
         }
 
         .control-btn.active {
-            background: #e94560;
+            background: #888;
         }
 
         .control-btn.primary {
-            background: #e94560;
+            background: #888;
             font-weight: 600;
         }
 
@@ -204,7 +207,7 @@
             width: 40px;
             height: 40px;
             border: 3px solid #333;
-            border-top-color: #e94560;
+            border-top-color: #888;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -246,14 +249,14 @@
             -webkit-appearance: none;
             width: 20px;
             height: 20px;
-            background: #e94560;
+            background: #888;
             border-radius: 50%;
             cursor: pointer;
         }
 
         .slider-value {
             font-size: 12px;
-            color: #e94560;
+            color: #888;
             min-width: 30px;
             text-align: right;
         }
@@ -299,7 +302,7 @@
         }
 
         .gallery-item.selected {
-            border-color: #e94560;
+            border-color: #888;
         }
 
         .gallery-item img {
@@ -390,7 +393,7 @@
         }
 
         .gallery-mask-item:hover {
-            border-color: #e94560;
+            border-color: #888;
         }
 
         .gallery-mask-item .delete-btn {
@@ -482,7 +485,7 @@
 
         .anchor-btn.active {
             opacity: 1;
-            background: #e94560;
+            background: #888;
         }
 
         .anchor-btn.placed {
@@ -563,14 +566,14 @@
             background: #0f3460;
         }
         .modal-btn.primary {
-            background: #e94560;
+            background: #888;
         }
         .modal-btn .icon {
             font-size: 24px;
             margin-right: 12px;
         }
         .modal-btn.selected {
-            background: #e94560;
+            background: #888;
         }
         .modal-divider {
             height: 1px;
@@ -679,10 +682,11 @@
     <div class="version-tag">v5.1-mouth</div>
     <div id="debugInfo" style="display:none;position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.8);color:#0f0;font-family:monospace;font-size:12px;padding:10px;z-index:9999;max-width:90%;"></div>
     <div class="container">
-        <!-- Header showing current group and make mask button -->
+        <!-- Header with group name and buttons -->
         <div class="header-bar" id="headerBar">
             <span class="group-name" id="groupNameHeader">Public Masks</span>
-            <button class="make-mask-btn" id="makeMaskBtn">Make Mask</button>
+            <button class="header-btn" id="galleryBtn">Choose Mask</button>
+            <button class="header-btn" id="makeMaskBtn">Make Mask</button>
         </div>
 
         <!-- Face Tracking View -->
@@ -696,14 +700,11 @@
                     <div class="loading-text" id="loadingText">Initializing...</div>
                 </div>
             </div>
-            <div class="controls">
-                <button class="control-btn" id="galleryBtn">Choose Mask</button>
-            </div>
 
             <!-- Mask Gallery Overlay -->
             <div class="gallery-overlay hidden" id="galleryOverlay">
                 <div class="gallery-header">
-                    <span>Group: <span id="groupName" style="color:#e94560"></span> <span id="maskCount" style="opacity:0.7"></span></span>
+                    <span>Group: <span id="groupName" style="color:#888"></span> <span id="maskCount" style="opacity:0.7"></span></span>
                     <button class="control-btn small" id="closeGalleryBtn">Close</button>
                 </div>
                 <div class="gallery-grid" id="galleryGrid">

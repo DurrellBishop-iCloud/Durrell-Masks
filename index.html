@@ -3118,24 +3118,24 @@
             }
         }
 
-        // Group Picker Modal
+        // Group Picker Modal (for switching groups only, no edit)
         function showGroupPicker() {
             const modal = document.getElementById('groupPickerModal');
             const list = document.getElementById('groupPickerList');
-            const groups = getSavedGroups();
-            const lastGroup = getLastGroup();
+            const groups = getSavedGroups().filter(g => g !== 'public' && g !== 'local');
 
             let html = `
-                <button class="modal-btn ${currentGroup === 'default' ? 'selected' : ''}" data-group="default">
-                    <span class="icon">⭐</span>
-                    Default
+                <button class="modal-btn ${currentGroup === 'public' ? 'selected' : ''}" data-group="public">
+                    ${isAdmin ? '* ' : ''}Public Masks
+                </button>
+                <button class="modal-btn ${currentGroup === 'local' ? 'selected' : ''}" data-group="local">
+                    Local
                 </button>
             `;
 
             groups.forEach(g => {
                 html += `
                     <button class="modal-btn ${currentGroup === g ? 'selected' : ''}" data-group="${g}">
-                        <span class="icon">📁</span>
                         ${g}
                     </button>
                 `;

@@ -145,11 +145,11 @@
         }
 
         .control-btn {
-            padding: 10px 16px;
+            padding: 4px 12px;
             border: 1px solid #888;
             background: none;
             color: #888;
-            font-size: 14px;
+            font-size: 12px;
             cursor: pointer;
             transition: background 0.2s, transform 0.1s;
         }
@@ -826,6 +826,12 @@
                 <button class="control-btn primary" id="saveBtn">Save</button>
             </div>
 
+            <div class="slider-row" id="toleranceRow">
+                <label>Tolerance:</label>
+                <input type="range" id="toleranceSlider" min="10" max="150" value="60">
+                <span class="slider-value" id="toleranceValue">60</span>
+            </div>
+
             <div class="points-info hidden" id="pointsInfo">
                 <span id="pointsStatus">Tap LEFT side for left eye, then RIGHT side</span>
                 <button class="control-btn small" id="clearPointsBtn">Clear Points</button>
@@ -839,12 +845,6 @@
             <!-- Preview state (after photo taken) -->
             <div id="capturePreview" class="preview-container transparency-bg hidden">
                 <canvas id="previewCanvas"></canvas>
-            </div>
-
-            <div class="slider-row" id="toleranceRow">
-                <label>Tolerance:</label>
-                <input type="range" id="toleranceSlider" min="10" max="150" value="60">
-                <span class="slider-value" id="toleranceValue">60</span>
             </div>
 
             <div class="controls" id="captureControls">
@@ -3678,6 +3678,8 @@
 
         function handleEraseStart(e) {
             if (!eraseMode) return;
+            // Only erase with single finger - allow pinch/pan with 2+ fingers
+            if (e.touches && e.touches.length > 1) return;
             e.preventDefault();
             isErasing = true;
             const coords = getCanvasCoords(e, previewCanvasEl);
@@ -3686,6 +3688,11 @@
 
         function handleEraseMove(e) {
             if (!eraseMode || !isErasing) return;
+            // Stop erasing if multi-touch detected (user wants to zoom/pan)
+            if (e.touches && e.touches.length > 1) {
+                isErasing = false;
+                return;
+            }
             e.preventDefault();
             const coords = getCanvasCoords(e, previewCanvasEl);
             eraseAtPoint(coords.x, coords.y);

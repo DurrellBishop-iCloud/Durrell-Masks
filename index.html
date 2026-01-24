@@ -1247,14 +1247,13 @@
                 y: landmarks[MOUTH_RIGHT].y * h
             };
 
-            // Get mask anchor points - flip X to match mirrored view
-            // User places "Left" on left of screen, we flip so it aligns with left of face
+            // Get mask anchor points (no X flip - mask is drawn unmirrored)
             const maskLeftEye = {
-                x: (1 - loadedMask.anchors.leftEye.x) * loadedMask.width,
+                x: loadedMask.anchors.leftEye.x * loadedMask.width,
                 y: loadedMask.anchors.leftEye.y * loadedMask.height
             };
             const maskRightEye = {
-                x: (1 - loadedMask.anchors.rightEye.x) * loadedMask.width,
+                x: loadedMask.anchors.rightEye.x * loadedMask.width,
                 y: loadedMask.anchors.rightEye.y * loadedMask.height
             };
 
@@ -1276,11 +1275,11 @@
             // If mask has mouth anchors, calculate horizontal stretch for mouth
             if (loadedMask.anchors.leftMouth && loadedMask.anchors.rightMouth) {
                 const maskLeftMouth = {
-                    x: (1 - loadedMask.anchors.leftMouth.x) * loadedMask.width,
+                    x: loadedMask.anchors.leftMouth.x * loadedMask.width,
                     y: loadedMask.anchors.leftMouth.y * loadedMask.height
                 };
                 const maskRightMouth = {
-                    x: (1 - loadedMask.anchors.rightMouth.x) * loadedMask.width,
+                    x: loadedMask.anchors.rightMouth.x * loadedMask.width,
                     y: loadedMask.anchors.rightMouth.y * loadedMask.height
                 };
 
@@ -1333,10 +1332,10 @@
             // scaleX may include mouth-based stretch, scaleY is eye-based only
             trackCtx.scale(scaleX, scaleY);
 
-            // Draw image - offset adjusted for the flip
+            // Draw image centered on anchor midpoint
             trackCtx.drawImage(
                 maskImage,
-                maskCenterX - loadedMask.width,
+                -maskCenterX,
                 -maskCenterY,
                 loadedMask.width,
                 loadedMask.height

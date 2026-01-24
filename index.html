@@ -3246,10 +3246,7 @@
         document.getElementById('groupCloseBtn').addEventListener('click', hideGroupMenu);
 
         document.getElementById('publicGroupBtn').addEventListener('click', () => {
-            hideGroupMenu();
-            if (currentGroup !== 'public') {
-                window.location.href = '?group=public';
-            }
+            selectGroupAndMake('public');
         });
 
         document.getElementById('localGroupBtn').addEventListener('click', () => {

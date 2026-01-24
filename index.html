@@ -188,7 +188,7 @@
             min-width: 32px;
         }
 
-        .control-btn.eye-btn.placed {
+        .control-btn.eye-btn.active {
             background: #4a4;
             border-color: #4a4;
             color: white;
@@ -3611,24 +3611,40 @@
         document.getElementById('takePhotoBtn').addEventListener('click', takePhoto);
         document.getElementById('retakeBtn').addEventListener('click', retakePhoto);
 
-        // Tap on preview canvas - either cut holes or place eye points
         // Tap on preview canvas - either cut holes or place eye points (not in erase mode)
-        document.getElementById('previewCanvas').addEventListener('click', (e) => {
-            if (eraseMode) return; // Erase mode uses drag, not click
+        function handleCanvasTap(e) {
+            if (eraseMode) return;
 
-            const canvas = e.target;
+            const canvas = document.getElementById('previewCanvas');
             const rect = canvas.getBoundingClientRect();
 
-            // Convert click position to canvas coordinates
+            let clientX, clientY;
+            if (e.changedTouches) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
-            const canvasX = (e.clientX - rect.left) * scaleX;
-            const canvasY = (e.clientY - rect.top) * scaleY;
+            const canvasX = (clientX - rect.left) * scaleX;
+            const canvasY = (clientY - rect.top) * scaleY;
 
             if (eyePointMode) {
                 placeEyePoint(canvasX, canvasY);
             } else {
                 cutHoleAtPoint(canvasX, canvasY);
+            }
+        }
+
+        document.getElementById('previewCanvas').addEventListener('click', handleCanvasTap);
+        document.getElementById('previewCanvas').addEventListener('touchend', (e) => {
+            if (eraseMode) return;
+            if (eyePointMode) {
+                e.preventDefault();
+                handleCanvasTap(e);
             }
         });
 

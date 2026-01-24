@@ -800,7 +800,7 @@
                         <button class="control-btn anchor-btn active" data-anchor="leftEye">L Eye</button>
                         <button class="control-btn anchor-btn" data-anchor="rightEye">R Eye</button>
                     </div>
-                    <div class="edit-status" id="editStatus">Tap on LEFT side of mask for left eye</div>
+                    <div class="edit-status" id="editStatus">Tap on RIGHT side of mask for right eye</div>
                     <div class="edit-actions">
                         <button class="control-btn" id="resetPointsBtn">Reset All</button>
                         <button class="control-btn" id="textureBtn">Change Texture</button>
@@ -835,7 +835,7 @@
             </div>
 
             <div class="points-info hidden" id="pointsInfo">
-                <span id="pointsStatus">Tap LEFT side for left eye, then RIGHT side</span>
+                <span id="pointsStatus">Tap RIGHT side for right eye, then LEFT side</span>
                 <button class="control-btn small" id="clearPointsBtn">Clear Points</button>
             </div>
 
@@ -2903,20 +2903,20 @@
 
         function updatePointsStatus() {
             const status = document.getElementById('pointsStatus');
-            if (!eyePoints.left) {
-                status.textContent = 'Tap LEFT side for left eye';
-            } else if (!eyePoints.right) {
+            if (!eyePoints.right) {
                 status.textContent = 'Tap RIGHT side for right eye';
+            } else if (!eyePoints.left) {
+                status.textContent = 'Tap LEFT side for left eye';
             } else {
                 status.textContent = 'Eyes placed! Save or clear to redo.';
             }
         }
 
         function placeEyePoint(canvasX, canvasY) {
-            if (!eyePoints.left) {
-                eyePoints.left = { x: canvasX, y: canvasY };
-            } else if (!eyePoints.right) {
+            if (!eyePoints.right) {
                 eyePoints.right = { x: canvasX, y: canvasY };
+            } else if (!eyePoints.left) {
+                eyePoints.left = { x: canvasX, y: canvasY };
             }
             // If both eyes are placed, do nothing (user must clear first)
             updatePointsStatus();

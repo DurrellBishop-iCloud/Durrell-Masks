@@ -1233,9 +1233,9 @@
             // Rotate to match face angle
             trackCtx.rotate(rotation);
 
-            // Scale to match face size AND flip horizontally to match mirrored view
+            // Scale to match face size (no horizontal flip - anchors already handle mirroring)
             // scaleX may include mouth-based stretch, scaleY is eye-based only
-            trackCtx.scale(-scaleX, scaleY);
+            trackCtx.scale(scaleX, scaleY);
 
             // Draw image - offset adjusted for the flip
             trackCtx.drawImage(

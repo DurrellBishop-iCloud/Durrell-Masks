@@ -1741,6 +1741,9 @@
             countEl.textContent = '(' + galleryManifest.masks.length + ')';
             grid.innerHTML = '';
 
+            // Only show edit/delete for non-public groups, or if admin
+            const canEdit = currentGroup !== 'public' || isAdmin;
+
             galleryManifest.masks.forEach(mask => {
                 const item = document.createElement('div');
                 item.className = 'gallery-mask-item';
@@ -1748,26 +1751,35 @@
                 const imageUrl = mask.image.startsWith('data:')
                     ? mask.image
                     : `https://raw.githubusercontent.com/DurrellBishop-iCloud/m/main/${mask.image}`;
-                item.innerHTML = `
-                    <img src="${imageUrl}" alt="${mask.name}">
-                    <button class="edit-btn">Edit</button>
-                    <button class="delete-btn" data-mask-id="${mask.id}">&times;</button>
-                `;
+
+                if (canEdit) {
+                    item.innerHTML = `
+                        <img src="${imageUrl}" alt="${mask.name}">
+                        <button class="edit-btn">Edit</button>
+                        <button class="delete-btn" data-mask-id="${mask.id}">&times;</button>
+                    `;
+                } else {
+                    item.innerHTML = `
+                        <img src="${imageUrl}" alt="${mask.name}">
+                    `;
+                }
 
                 // Click on image selects the mask
                 item.querySelector('img').addEventListener('click', () => selectGalleryMask(mask));
 
-                // Click on edit button opens mask for editing
-                item.querySelector('.edit-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    editMaskFromGallery(mask, imageUrl);
-                });
+                if (canEdit) {
+                    // Click on edit button opens mask for editing
+                    item.querySelector('.edit-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        editMaskFromGallery(mask, imageUrl);
+                    });
 
-                // Click on delete button deletes the mask
-                item.querySelector('.delete-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    deleteMask(mask);
-                });
+                    // Click on delete button deletes the mask
+                    item.querySelector('.delete-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteMask(mask);
+                    });
+                }
 
                 grid.appendChild(item);
             });

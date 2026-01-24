@@ -785,38 +785,21 @@
     </div>
 
     <script>
-        // This runs immediately before module loads
-        document.getElementById('loadingText').textContent = 'Loading app...';
-        console.log('Inline script running');
+        document.getElementById('loadingText').textContent = 'Starting...';
     </script>
 
     <script type="module">
-        // Show loading status immediately
-        document.getElementById('loadingText').textContent = 'Loading face detection...';
+        document.getElementById('loadingText').textContent = 'Loading libraries...';
 
-        // Import with timeout
         let FaceLandmarker, FilesetResolver;
-
-        const importWithTimeout = (url, timeout = 15000) => {
-            return Promise.race([
-                import(url),
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Import timeout')), timeout)
-                )
-            ]);
-        };
-
         try {
-            const module = await importWithTimeout('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/+esm');
-            FaceLandmarker = module.FaceLandmarker;
-            FilesetResolver = module.FilesetResolver;
-            document.getElementById('loadingText').textContent = 'Libraries loaded...';
-            console.log('MediaPipe loaded successfully');
-        } catch (error) {
-            console.error('Failed to load MediaPipe:', error);
-            document.getElementById('loadingText').textContent = 'Load failed. Tap to retry.';
-            document.getElementById('loadingOverlay').onclick = () => location.reload();
-            throw error;
+            const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/+esm');
+            FaceLandmarker = vision.FaceLandmarker;
+            FilesetResolver = vision.FilesetResolver;
+            document.getElementById('loadingText').textContent = 'Model loading...';
+        } catch (e) {
+            document.getElementById('loadingText').textContent = 'Error: ' + e.message;
+            console.error(e);
         }
 
         // ============================================

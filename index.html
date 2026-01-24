@@ -2469,6 +2469,11 @@
         function cutHoleAtPoint(canvasX, canvasY) {
             if (!previewCanvas || !previewCtx) return;
 
+            // Restore clean image first (remove any markers)
+            if (currentMaskData) {
+                previewCtx.putImageData(currentMaskData, 0, 0);
+            }
+
             const tolerance = parseInt(document.getElementById('toleranceSlider').value);
             const imageData = previewCtx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
             const data = imageData.data;
@@ -2526,8 +2531,11 @@
 
             previewCtx.putImageData(imageData, 0, 0);
 
-            // Save current state for later use (eye point markers)
+            // Save current state (clean, without markers)
             currentMaskData = previewCtx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+
+            // Redraw markers for display
+            drawEyePointMarkers();
 
             updateStatus('capture', `Cut hole (${filledCount} pixels). Tap again or Save.`);
         }

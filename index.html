@@ -900,7 +900,9 @@
         // TAB NAVIGATION
         // ============================================
 
-        function switchView(viewId) {
+        let isEditingExistingMask = false;
+
+        function switchView(viewId, skipCamera = false) {
             // Update views
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById(viewId + 'View').classList.add('active');
@@ -910,9 +912,13 @@
             // Handle camera switching
             if (viewId === 'capture') {
                 stopTracking();
-                startCaptureCamera();
+                // Don't start camera if we're editing an existing mask
+                if (!skipCamera && !isEditingExistingMask) {
+                    startCaptureCamera();
+                }
             } else {
                 stopCaptureCamera();
+                isEditingExistingMask = false; // Reset when leaving capture view
                 // Restart face tracking when returning to track view
                 if (faceLandmarker && !isTracking) {
                     startTracking();
@@ -1777,15 +1783,19 @@
         async function editMaskFromGallery(mask, imageUrl) {
             editingMask = mask;
             editingMaskGroup = currentGroup;
+            isEditingExistingMask = true;
 
             closeGallery();
+
+            // Stop any running camera
+            stopCaptureCamera();
 
             // Load the image into preview canvas
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = () => {
-                // Switch to capture view
-                switchView('capture');
+                // Switch to capture view (camera won't start due to isEditingExistingMask flag)
+                switchView('capture', true);
 
                 // Set up preview canvas
                 previewCanvas = document.getElementById('previewCanvas');
@@ -1826,16 +1836,19 @@
                     }
                 }
 
-                // Show edit controls
+                // Hide camera, show preview with mask
                 document.getElementById('captureCamera').classList.add('hidden');
                 document.getElementById('capturePreview').classList.remove('hidden');
                 document.getElementById('captureControls').classList.add('hidden');
                 document.getElementById('editControls').classList.remove('hidden');
 
+                // Change Retake button to Cancel when editing
+                document.getElementById('retakeBtn').textContent = 'Cancel';
+
                 // Draw markers
                 drawEyePointMarkers();
 
-                updateStatus('capture', 'Editing mask - adjust anchors or save to a group');
+                updateStatus('capture', 'Editing mask - tap to adjust anchors, then Save');
             };
             img.src = imageUrl;
         }
@@ -2277,6 +2290,16 @@
         }
 
         function retakePhoto() {
+            // If editing existing mask, Cancel returns to track view
+            if (isEditingExistingMask) {
+                isEditingExistingMask = false;
+                editingMask = null;
+                editingMaskGroup = null;
+                document.getElementById('retakeBtn').textContent = 'Retake';
+                switchView('track');
+                return;
+            }
+
             originalImageData = null;
             currentMaskData = null;
             eyePoints = { left: null, right: null, leftMouth: null, rightMouth: null };
@@ -2927,26 +2950,133 @@
 
             // Build saved groups list (exclude public and local)
             const groups = getSavedGroups().filter(g => g !== 'public' && g !== 'local');
+
+            let html = '';
+
+            // Add Replace option if editing existing mask
+            if (isEditingExistingMask && editingMask) {
+                const canReplace = editingMaskGroup === 'local' ||
+                                   (editingMaskGroup === 'public' && isAdmin) ||
+                                   (editingMaskGroup !== 'public' && editingMaskGroup !== 'local');
+                if (canReplace) {
+                    html += `<button class="modal-btn primary" id="replaceOriginalBtn">Replace Original</button>`;
+                }
+            }
+
             if (groups.length > 0) {
-                groupList.innerHTML = groups.map(g => `
+                html += groups.map(g => `
                     <button class="modal-btn" data-save-group="${g}">${g}</button>
                 `).join('');
-
-                // Add click handlers
-                groupList.querySelectorAll('[data-save-group]').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        saveToGroup(btn.dataset.saveGroup);
-                    });
-                });
-            } else {
-                groupList.innerHTML = '';
             }
+
+            groupList.innerHTML = html;
+
+            // Add click handler for Replace Original
+            const replaceBtn = document.getElementById('replaceOriginalBtn');
+            if (replaceBtn) {
+                replaceBtn.addEventListener('click', replaceOriginalMask);
+            }
+
+            // Add click handlers for group buttons
+            groupList.querySelectorAll('[data-save-group]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    saveToGroup(btn.dataset.saveGroup);
+                });
+            });
 
             modal.classList.remove('hidden');
         }
 
         function hideSaveModal() {
             document.getElementById('saveModal').classList.add('hidden');
+        }
+
+        // Replace the original mask being edited
+        async function replaceOriginalMask() {
+            hideSaveModal();
+
+            if (!editingMask || !editingMaskGroup) {
+                updateStatus('capture', 'Error: No mask to replace');
+                return;
+            }
+
+            // Redraw canvas WITHOUT markers
+            if (currentMaskData) {
+                previewCtx.putImageData(currentMaskData, 0, 0);
+            }
+
+            const imageDataUrl = previewCanvas.toDataURL('image/png');
+
+            // Build updated anchors
+            const anchors = {};
+            if (eyePoints.left && eyePoints.right) {
+                anchors.leftEye = { x: eyePoints.left.x / previewCanvas.width, y: eyePoints.left.y / previewCanvas.height };
+                anchors.rightEye = { x: eyePoints.right.x / previewCanvas.width, y: eyePoints.right.y / previewCanvas.height };
+            }
+            if (eyePoints.leftMouth) {
+                anchors.leftMouth = { x: eyePoints.leftMouth.x / previewCanvas.width, y: eyePoints.leftMouth.y / previewCanvas.height };
+            }
+            if (eyePoints.rightMouth) {
+                anchors.rightMouth = { x: eyePoints.rightMouth.x / previewCanvas.width, y: eyePoints.rightMouth.y / previewCanvas.height };
+            }
+
+            if (editingMaskGroup === 'local') {
+                // Update local mask
+                const localMasks = JSON.parse(localStorage.getItem('local_masks') || '[]');
+                const maskIndex = localMasks.findIndex(m => m.id === editingMask.id);
+                if (maskIndex !== -1) {
+                    localMasks[maskIndex].image = imageDataUrl;
+                    localMasks[maskIndex].anchors = anchors;
+                    localStorage.setItem('local_masks', JSON.stringify(localMasks));
+                }
+                galleryManifest = null;
+                updateStatus('capture', 'Mask updated!');
+                isEditingExistingMask = false;
+                editingMask = null;
+                editingMaskGroup = null;
+                document.getElementById('retakeBtn').textContent = 'Retake';
+                setTimeout(() => switchView('track'), 1000);
+            } else {
+                // Update remote mask - need to delete old and create new with same name
+                updateStatus('capture', 'Updating mask...');
+                try {
+                    // For remote masks, we update by saving with the same name
+                    // First delete the old one
+                    await fetch('https://mask-worker.durrell-bishop.workers.dev/mask', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            group: editingMaskGroup,
+                            maskId: editingMask.id
+                        })
+                    });
+
+                    // Then save the updated version
+                    const response = await fetch('https://mask-worker.durrell-bishop.workers.dev/upload', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            group: editingMaskGroup,
+                            name: editingMask.name,
+                            imageData: imageDataUrl,
+                            anchors: anchors
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('Upload failed');
+
+                    saveGroupToStorage(editingMaskGroup);
+                    galleryManifest = null;
+                    updateStatus('capture', 'Mask updated!');
+                    isEditingExistingMask = false;
+                    editingMask = null;
+                    editingMaskGroup = null;
+                    document.getElementById('retakeBtn').textContent = 'Retake';
+                    setTimeout(() => switchView('track'), 1000);
+                } catch (error) {
+                    updateStatus('capture', 'Error updating mask: ' + error.message);
+                }
+            }
         }
 
         // Save to local storage (for Local Masks group)
@@ -2988,6 +3118,12 @@
 
             // Clear gallery cache so it reloads
             galleryManifest = null;
+
+            // Reset edit state
+            isEditingExistingMask = false;
+            editingMask = null;
+            editingMaskGroup = null;
+            document.getElementById('retakeBtn').textContent = 'Retake';
 
             updateStatus('capture', `"${maskName}" saved to Local Masks!`);
 
@@ -3058,6 +3194,12 @@
 
                 // Clear for next time
                 galleryManifest = null;
+
+                // Reset edit state
+                isEditingExistingMask = false;
+                editingMask = null;
+                editingMaskGroup = null;
+                document.getElementById('retakeBtn').textContent = 'Retake';
 
                 updateStatus('capture', `"${maskName}" saved to ${groupName}!`);
 

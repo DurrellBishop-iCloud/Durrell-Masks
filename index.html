@@ -817,6 +817,20 @@
 
         <!-- Capture/Create Mask View -->
         <div class="view" id="captureView">
+            <!-- Edit controls (above canvas so always accessible) -->
+            <div class="controls hidden" id="editControls">
+                <button class="control-btn" id="retakeBtn">Retake</button>
+                <button class="control-btn" id="addPointsBtn">Add Anchors</button>
+                <button class="control-btn" id="eraseBtn">Erase</button>
+                <button class="control-btn" id="createTextureBtn">Change Texture</button>
+                <button class="control-btn primary" id="saveBtn">Save</button>
+            </div>
+
+            <div class="points-info hidden" id="pointsInfo">
+                <span id="pointsStatus">Tap LEFT side for left eye, then RIGHT side</span>
+                <button class="control-btn small" id="clearPointsBtn">Clear Points</button>
+            </div>
+
             <!-- Camera state -->
             <div id="captureCamera" class="camera-container">
                 <video id="captureVideo" autoplay playsinline muted></video>
@@ -835,19 +849,6 @@
 
             <div class="controls" id="captureControls">
                 <button class="control-btn primary" id="takePhotoBtn">Take Photo</button>
-            </div>
-
-            <div class="controls hidden" id="editControls">
-                <button class="control-btn" id="retakeBtn">Retake</button>
-                <button class="control-btn" id="addPointsBtn">Add Anchors</button>
-                <button class="control-btn" id="eraseBtn">Erase</button>
-                <button class="control-btn" id="createTextureBtn">Change Texture</button>
-                <button class="control-btn primary" id="saveBtn">Save</button>
-            </div>
-
-            <div class="points-info hidden" id="pointsInfo">
-                <span id="pointsStatus">Tap LEFT side for left eye, then RIGHT side</span>
-                <button class="control-btn small" id="clearPointsBtn">Clear Points</button>
             </div>
 
             <div class="status" id="captureStatus">Point camera at your drawing and tap "Take Photo"</div>

@@ -3675,24 +3675,56 @@
 
         // Erase mode - touch/mouse events for dragging
         const previewCanvasEl = document.getElementById('previewCanvas');
+        let eraseStartTimeout = null;
+        let pendingEraseCoords = null;
 
         function handleEraseStart(e) {
             if (!eraseMode) return;
-            // Only erase with single finger - allow pinch/pan with 2+ fingers
-            if (e.touches && e.touches.length > 1) return;
-            e.preventDefault();
-            isErasing = true;
-            const coords = getCanvasCoords(e, previewCanvasEl);
-            eraseAtPoint(coords.x, coords.y);
-        }
-
-        function handleEraseMove(e) {
-            if (!eraseMode || !isErasing) return;
-            // Stop erasing if multi-touch detected (user wants to zoom/pan)
+            // Multi-touch - cancel any pending erase and don't start
             if (e.touches && e.touches.length > 1) {
+                if (eraseStartTimeout) {
+                    clearTimeout(eraseStartTimeout);
+                    eraseStartTimeout = null;
+                }
                 isErasing = false;
                 return;
             }
+
+            const coords = getCanvasCoords(e, previewCanvasEl);
+
+            // Mouse - erase immediately
+            if (!e.touches) {
+                e.preventDefault();
+                isErasing = true;
+                eraseAtPoint(coords.x, coords.y);
+                return;
+            }
+
+            // Touch - delay to detect multi-touch gesture
+            pendingEraseCoords = coords;
+            eraseStartTimeout = setTimeout(() => {
+                if (pendingEraseCoords) {
+                    isErasing = true;
+                    eraseAtPoint(pendingEraseCoords.x, pendingEraseCoords.y);
+                    pendingEraseCoords = null;
+                }
+                eraseStartTimeout = null;
+            }, 80);
+        }
+
+        function handleEraseMove(e) {
+            if (!eraseMode) return;
+            // Multi-touch - cancel erase mode
+            if (e.touches && e.touches.length > 1) {
+                if (eraseStartTimeout) {
+                    clearTimeout(eraseStartTimeout);
+                    eraseStartTimeout = null;
+                    pendingEraseCoords = null;
+                }
+                isErasing = false;
+                return;
+            }
+            if (!isErasing) return;
             e.preventDefault();
             const coords = getCanvasCoords(e, previewCanvasEl);
             eraseAtPoint(coords.x, coords.y);
@@ -3700,6 +3732,11 @@
 
         function handleEraseEnd(e) {
             if (!eraseMode) return;
+            if (eraseStartTimeout) {
+                clearTimeout(eraseStartTimeout);
+                eraseStartTimeout = null;
+                pendingEraseCoords = null;
+            }
             if (isErasing) {
                 isErasing = false;
                 // Save state after erasing

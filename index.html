@@ -1481,8 +1481,7 @@
                 return;
             }
 
-            const maskName = prompt('Enter a name for this mask:', 'My Mask');
-            if (!maskName) return;
+            const maskName = generateMaskName();
 
             document.getElementById('editStatus').textContent = 'Publishing to ' + currentGroup + '...';
 
@@ -1864,8 +1863,7 @@
                 return;
             }
 
-            const maskName = prompt('Enter a name for this mask:', 'My Mask');
-            if (!maskName) return;
+            const maskName = generateMaskName();
 
             updateStatus('capture', 'Publishing to group: ' + currentGroup + '...');
 
@@ -2806,6 +2804,28 @@
             localStorage.setItem('mask_last_group', groupName);
         }
 
+        // Auto-generate mask name from device and timestamp
+        function generateMaskName() {
+            // Get simple device name from userAgent
+            const ua = navigator.userAgent;
+            let device = 'Unknown';
+            if (/iPhone/.test(ua)) device = 'iPhone';
+            else if (/iPad/.test(ua)) device = 'iPad';
+            else if (/Android/.test(ua)) device = 'Android';
+            else if (/Mac/.test(ua)) device = 'Mac';
+            else if (/Windows/.test(ua)) device = 'Windows';
+            else if (/Linux/.test(ua)) device = 'Linux';
+
+            // Format: "iPhone-Jan24-1430" (device-month-day-time)
+            const now = new Date();
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const month = months[now.getMonth()];
+            const day = now.getDate();
+            const time = now.getHours().toString().padStart(2,'0') + now.getMinutes().toString().padStart(2,'0');
+
+            return `${device}-${month}${day}-${time}`;
+        }
+
         // Show save modal
         function showSaveModal() {
             if (!eyePoints.left || !eyePoints.right) {
@@ -2847,8 +2867,7 @@
         function saveToPhone() {
             hideSaveModal();
 
-            const maskName = prompt('Enter a name for this mask:', 'My Mask');
-            if (!maskName) return;
+            const maskName = generateMaskName();
 
             // Redraw canvas WITHOUT markers
             if (currentMaskData) {
@@ -2910,8 +2929,7 @@
         async function saveToGroup(groupName) {
             hideSaveModal();
 
-            const maskName = prompt('Enter a name for this mask:', 'My Mask');
-            if (!maskName) return;
+            const maskName = generateMaskName();
 
             updateStatus('capture', 'Saving to ' + groupName + '...');
 

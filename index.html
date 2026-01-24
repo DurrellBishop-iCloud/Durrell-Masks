@@ -834,6 +834,8 @@
                 <button class="control-btn" id="retakeBtn">Retake</button>
                 <button class="control-btn" id="eraseBtn">Erase</button>
                 <button class="control-btn" id="createTextureBtn">Change Texture</button>
+            </div>
+            <div class="controls hidden" id="eyeControls">
                 <button class="control-btn eye-btn" id="eyeRightBtn">1</button>
                 <button class="control-btn primary" id="saveBtn">Save</button>
                 <button class="control-btn eye-btn" id="eyeLeftBtn">2</button>
@@ -1926,6 +1928,7 @@
                 document.getElementById('capturePreview').classList.remove('hidden');
                 document.getElementById('captureControls').classList.add('hidden');
                 document.getElementById('editControls').classList.remove('hidden');
+                document.getElementById('eyeControls').classList.remove('hidden');
 
                 // Change Retake button to Cancel when editing
                 document.getElementById('retakeBtn').textContent = 'Cancel';
@@ -2154,6 +2157,7 @@
 
                 // Update UI
                 document.getElementById('editControls').classList.add('hidden');
+                document.getElementById('eyeControls').classList.add('hidden');
                 exitEyePointMode();
                 document.getElementById('toleranceRow').classList.add('hidden');
 
@@ -2193,6 +2197,7 @@
             document.getElementById('captureControls').innerHTML = '<button class="control-btn primary" id="takePhotoBtn">Take Photo</button>';
             document.getElementById('captureControls').classList.add('hidden');
             document.getElementById('editControls').classList.remove('hidden');
+                document.getElementById('eyeControls').classList.remove('hidden');
             document.getElementById('toleranceRow').classList.remove('hidden');
 
             document.getElementById('takePhotoBtn').addEventListener('click', takePhoto);
@@ -2262,6 +2267,7 @@
             document.getElementById('captureControls').innerHTML = '<button class="control-btn primary" id="takePhotoBtn">Take Photo</button>';
             document.getElementById('captureControls').classList.add('hidden');
             document.getElementById('editControls').classList.remove('hidden');
+                document.getElementById('eyeControls').classList.remove('hidden');
             document.getElementById('toleranceRow').classList.remove('hidden');
 
             document.getElementById('takePhotoBtn').addEventListener('click', takePhoto);
@@ -2326,6 +2332,7 @@
                 document.getElementById('capturePreview').classList.add('hidden');
                 document.getElementById('captureControls').classList.remove('hidden');
                 document.getElementById('editControls').classList.add('hidden');
+                document.getElementById('eyeControls').classList.add('hidden');
                 document.getElementById('toleranceRow').classList.add('hidden');
 
                 updateStatus('capture', 'Point camera at your drawing and tap "Take Photo"');
@@ -2372,6 +2379,7 @@
             document.getElementById('capturePreview').classList.remove('hidden');
             document.getElementById('captureControls').classList.add('hidden');
             document.getElementById('editControls').classList.remove('hidden');
+                document.getElementById('eyeControls').classList.remove('hidden');
             document.getElementById('toleranceRow').classList.remove('hidden');
 
             // Run initial background removal
@@ -3252,6 +3260,7 @@
 
             // Hide edit-specific UI
             document.getElementById('editControls').classList.add('hidden');
+                document.getElementById('eyeControls').classList.add('hidden');
             document.getElementById('toleranceRow').classList.add('hidden');
             eyePointMode = false;
             placingEye = null;

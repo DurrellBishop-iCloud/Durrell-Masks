@@ -886,9 +886,14 @@
         }
         updateHeader();
 
-        // Make Mask button - opens group menu to choose where to save
+        // Make Mask button - goes directly to capture for current group
         document.getElementById('makeMaskBtn').addEventListener('click', () => {
-            showGroupMenu();
+            // Non-admins can't make masks for public
+            if (currentGroup === 'public' && !isAdmin) {
+                alert('Switch to Local or another group to make masks');
+                return;
+            }
+            switchView('capture');
         });
 
         // Legacy constants (kept for compatibility)
@@ -3125,6 +3130,9 @@
             const groups = getSavedGroups().filter(g => g !== 'public' && g !== 'local');
 
             let html = `
+                <button class="modal-btn" id="newGroupPickerBtn">
+                    + New Group
+                </button>
                 <button class="modal-btn ${currentGroup === 'public' ? 'selected' : ''}" data-group="public">
                     ${isAdmin ? '* ' : ''}Public Masks
                 </button>
@@ -3142,6 +3150,19 @@
             });
 
             list.innerHTML = html;
+
+            // New group button
+            document.getElementById('newGroupPickerBtn').addEventListener('click', () => {
+                hideGroupPicker();
+                const groupName = prompt('Enter a name for your new group:');
+                if (!groupName) return;
+                const safeName = groupName.toLowerCase().replace(/[^a-z0-9-_]/g, '');
+                if (!safeName) {
+                    alert('Please use only letters and numbers');
+                    return;
+                }
+                switchToGroup(safeName + '-masks');
+            });
 
             list.querySelectorAll('[data-group]').forEach(btn => {
                 btn.addEventListener('click', () => {

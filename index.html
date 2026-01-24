@@ -420,6 +420,24 @@
             background: rgba(255,0,0,1);
         }
 
+        .gallery-mask-item .edit-btn {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #888;
+            color: #888;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .gallery-mask-item .edit-btn:active {
+            background: #888;
+            color: white;
+        }
+
         .gallery-loading, .gallery-empty {
             grid-column: 1 / -1;
             text-align: center;
@@ -610,17 +628,11 @@
     <!-- Save Modal -->
     <div class="modal-overlay hidden" id="saveModal">
         <div class="modal">
-            <h3>Save Your Mask</h3>
-            <button class="modal-btn" id="saveToPhoneBtn">
-                <span class="icon">📱</span>
-                Save to My Phone
-            </button>
-            <div class="modal-divider"></div>
-            <button class="modal-btn" id="saveToGroupBtn">
-                <span class="icon">👥</span>
-                Save to Share Group
-            </button>
-            <div class="group-list" id="groupList"></div>
+            <h3 style="text-align:center;margin:0 0 16px 0;color:#888;">Save To</h3>
+            <button class="modal-btn" id="saveToPublicBtn" style="display:none;">Public Masks</button>
+            <button class="modal-btn" id="saveToLocalBtn">Local Masks</button>
+            <div id="saveGroupList"></div>
+            <button class="modal-btn" id="saveToNewGroupBtn">New Group...</button>
             <button class="modal-cancel" id="saveCancelBtn">Cancel</button>
         </div>
     </div>
@@ -1730,11 +1742,18 @@
                     : `https://raw.githubusercontent.com/DurrellBishop-iCloud/m/main/${mask.image}`;
                 item.innerHTML = `
                     <img src="${imageUrl}" alt="${mask.name}">
+                    <button class="edit-btn">Edit</button>
                     <button class="delete-btn" data-mask-id="${mask.id}">&times;</button>
                 `;
 
                 // Click on image selects the mask
                 item.querySelector('img').addEventListener('click', () => selectGalleryMask(mask));
+
+                // Click on edit button opens mask for editing
+                item.querySelector('.edit-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    editMaskFromGallery(mask, imageUrl);
+                });
 
                 // Click on delete button deletes the mask
                 item.querySelector('.delete-btn').addEventListener('click', (e) => {
@@ -1744,6 +1763,77 @@
 
                 grid.appendChild(item);
             });
+        }
+
+        // Track mask being edited
+        let editingMask = null;
+        let editingMaskGroup = null;
+
+        // Edit a mask from the gallery
+        async function editMaskFromGallery(mask, imageUrl) {
+            editingMask = mask;
+            editingMaskGroup = currentGroup;
+
+            closeGallery();
+
+            // Load the image into preview canvas
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                // Switch to capture view
+                switchView('capture');
+
+                // Set up preview canvas
+                previewCanvas = document.getElementById('previewCanvas');
+                previewCtx = previewCanvas.getContext('2d', { willReadFrequently: true });
+                previewCanvas.width = img.width;
+                previewCanvas.height = img.height;
+                previewCtx.drawImage(img, 0, 0);
+
+                // Save current state
+                currentMaskData = previewCtx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+
+                // Load anchors as eye points
+                eyePoints = { left: null, right: null, leftMouth: null, rightMouth: null };
+                if (mask.anchors) {
+                    if (mask.anchors.leftEye) {
+                        eyePoints.left = {
+                            x: mask.anchors.leftEye.x * img.width,
+                            y: mask.anchors.leftEye.y * img.height
+                        };
+                    }
+                    if (mask.anchors.rightEye) {
+                        eyePoints.right = {
+                            x: mask.anchors.rightEye.x * img.width,
+                            y: mask.anchors.rightEye.y * img.height
+                        };
+                    }
+                    if (mask.anchors.leftMouth) {
+                        eyePoints.leftMouth = {
+                            x: mask.anchors.leftMouth.x * img.width,
+                            y: mask.anchors.leftMouth.y * img.height
+                        };
+                    }
+                    if (mask.anchors.rightMouth) {
+                        eyePoints.rightMouth = {
+                            x: mask.anchors.rightMouth.x * img.width,
+                            y: mask.anchors.rightMouth.y * img.height
+                        };
+                    }
+                }
+
+                // Show edit controls
+                document.getElementById('captureCamera').classList.add('hidden');
+                document.getElementById('capturePreview').classList.remove('hidden');
+                document.getElementById('captureControls').classList.add('hidden');
+                document.getElementById('editControls').classList.remove('hidden');
+
+                // Draw markers
+                drawEyePointMarkers();
+
+                updateStatus('capture', 'Editing mask - adjust anchors or save to a group');
+            };
+            img.src = imageUrl;
         }
 
         async function deleteMask(mask) {
@@ -2817,34 +2907,35 @@
             return `${device}-${month}${day}-${time}`;
         }
 
-        // Show save modal
-        function showSaveModal() {
+        // Show save group picker
+        function showSaveGroupPicker() {
             if (!eyePoints.left || !eyePoints.right) {
                 updateStatus('capture', 'Please add eye points before saving');
                 return;
             }
 
             const modal = document.getElementById('saveModal');
-            const groupList = document.getElementById('groupList');
-            const groups = getSavedGroups();
+            const groupList = document.getElementById('saveGroupList');
+            const publicBtn = document.getElementById('saveToPublicBtn');
 
-            // Build group list
+            // Show Public option only for admins
+            publicBtn.style.display = isAdmin ? 'flex' : 'none';
+
+            // Build saved groups list (exclude public and local)
+            const groups = getSavedGroups().filter(g => g !== 'public' && g !== 'local');
             if (groups.length > 0) {
                 groupList.innerHTML = groups.map(g => `
-                    <button class="modal-btn" data-group="${g}">
-                        <span class="icon">📁</span>
-                        ${g}
-                    </button>
+                    <button class="modal-btn" data-save-group="${g}">${g}</button>
                 `).join('');
 
                 // Add click handlers
-                groupList.querySelectorAll('[data-group]').forEach(btn => {
+                groupList.querySelectorAll('[data-save-group]').forEach(btn => {
                     btn.addEventListener('click', () => {
-                        saveToGroup(btn.dataset.group);
+                        saveToGroup(btn.dataset.saveGroup);
                     });
                 });
             } else {
-                groupList.innerHTML = '<p style="color:#666;text-align:center;padding:8px;">No groups yet</p>';
+                groupList.innerHTML = '';
             }
 
             modal.classList.remove('hidden');
@@ -3075,22 +3166,26 @@
         document.getElementById('galleryBtn').addEventListener('click', openGallery);
         document.getElementById('closeGalleryBtn').addEventListener('click', closeGallery);
 
-        // Save button - saves to current group
+        // Save button - shows group selection for where to save
         document.getElementById('saveBtn').addEventListener('click', () => {
-            if (currentGroup === 'public' && !isAdmin) {
-                alert('You cannot save to the Public group. Please choose a different group.');
-                return;
-            }
-            if (currentGroup === 'local') {
-                saveToPhone();
-            } else {
-                saveToGroup(currentGroup);
-            }
+            showSaveGroupPicker();
         });
 
         // Old modal buttons (kept for compatibility)
-        document.getElementById('saveToPhoneBtn')?.addEventListener('click', saveToPhone);
-        document.getElementById('saveToGroupBtn')?.addEventListener('click', showCreateGroup);
+        // Save modal buttons
+        document.getElementById('saveToPublicBtn')?.addEventListener('click', () => saveToGroup('public'));
+        document.getElementById('saveToLocalBtn')?.addEventListener('click', saveToPhone);
+        document.getElementById('saveToNewGroupBtn')?.addEventListener('click', () => {
+            hideSaveModal();
+            const groupName = prompt('Enter a name for your new group:');
+            if (!groupName) return;
+            const safeName = groupName.toLowerCase().replace(/[^a-z0-9-_]/g, '');
+            if (!safeName) {
+                alert('Please use only letters and numbers');
+                return;
+            }
+            saveToGroup(safeName + '-masks');
+        });
         document.getElementById('saveCancelBtn')?.addEventListener('click', hideSaveModal);
 
         // Share Modal

@@ -3346,8 +3346,10 @@
                     alert('Please use only letters and numbers');
                     return;
                 }
+                const fullName = safeName + '-masks';
+                saveGroupToStorage(fullName);
                 hideGroupPicker();
-                switchToGroup(safeName + '-masks');
+                switchToGroup(fullName);
             });
 
             list.querySelectorAll('[data-group]').forEach(btn => {

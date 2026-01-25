@@ -4211,6 +4211,43 @@
             }
         });
 
+        // Create built-in censor bar mask for empty groups
+        function loadCensorBarMask() {
+            // Create censor bar image
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 80;
+            const ctx = canvas.getContext('2d');
+
+            // Black bar
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, 400, 80);
+
+            // White text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Empty group - Create Mask', 200, 40);
+
+            // Create image from canvas
+            const img = new Image();
+            img.src = canvas.toDataURL();
+
+            img.onload = () => {
+                maskImage = img;
+                loadedMask = {
+                    width: 400,
+                    height: 80,
+                    anchors: {
+                        // Eyes positioned at 25% and 75% horizontally, centered vertically
+                        leftEye: { x: 0.25, y: 0.5 },
+                        rightEye: { x: 0.75, y: 0.5 }
+                    }
+                };
+            };
+        }
+
         // Load a random mask from the gallery
         async function loadRandomMask() {
             try {
@@ -4219,9 +4256,14 @@
                     currentMaskIndex = Math.floor(Math.random() * galleryManifest.masks.length);
                     const randomMask = galleryManifest.masks[currentMaskIndex];
                     await selectGalleryMask(randomMask);
+                } else {
+                    // No masks in group - load censor bar
+                    loadCensorBarMask();
                 }
             } catch (error) {
                 console.error('Failed to load random mask:', error);
+                // Fallback to censor bar on error
+                loadCensorBarMask();
             }
         }
 

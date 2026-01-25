@@ -3626,11 +3626,14 @@
             const qrEl = document.getElementById('qrCode');
             const btnText = document.getElementById('shareButtonText');
 
+            // Use public group when on local (local masks can't be shared)
+            const shareGroup = currentGroup === 'local' ? 'public' : currentGroup;
+
             // Set button text based on group
-            const shareName = currentGroup === 'public' ? 'Mask Maker' : currentGroup;
+            const shareName = (shareGroup === 'public') ? 'Mask Maker' : shareGroup;
             btnText.textContent = `Share ${shareName} with friends`;
 
-            const shareUrl = `https://dbgh.uk/m?group=${currentGroup}`;
+            const shareUrl = `https://dbgh.uk/m?group=${shareGroup}`;
             urlEl.textContent = shareUrl;
 
             // Generate QR code
@@ -3651,18 +3654,21 @@
         }
 
         function copyShareLink() {
-            const url = `https://dbgh.uk/m?group=${currentGroup}`;
+            const shareGroup = currentGroup === 'local' ? 'public' : currentGroup;
+            const url = `https://dbgh.uk/m?group=${shareGroup}`;
             navigator.clipboard.writeText(url).then(() => {
                 alert('Link copied!');
             });
         }
 
         function shareLink() {
-            const url = `https://dbgh.uk/m?group=${currentGroup}`;
+            const shareGroup = currentGroup === 'local' ? 'public' : currentGroup;
+            const shareName = shareGroup === 'public' ? 'Mask Maker' : shareGroup;
+            const url = `https://dbgh.uk/m?group=${shareGroup}`;
             if (navigator.share) {
                 navigator.share({
-                    title: 'Join my mask group!',
-                    text: `Join the "${currentGroup}" mask group`,
+                    title: `Share ${shareName}`,
+                    text: `Try ${shareName}!`,
                     url: url
                 });
             } else {

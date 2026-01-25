@@ -1147,10 +1147,10 @@
         const urlParams = new URLSearchParams(window.location.search);
         const currentGroup = urlParams.get('group') || localStorage.getItem('mask_last_group') || 'local';
 
-        // Admin mode - use ?admin=durrell to unlock public uploads
+        // Admin mode - use ?admin=durrell310863 to unlock admin features
         const adminCode = urlParams.get('admin');
-        const isAdmin = adminCode === 'durrell' || localStorage.getItem('mask_admin') === 'true';
-        if (adminCode === 'durrell') {
+        const isAdmin = adminCode === 'durrell310863' || localStorage.getItem('mask_admin') === 'true';
+        if (adminCode === 'durrell310863') {
             localStorage.setItem('mask_admin', 'true');
         }
 

@@ -3586,10 +3586,11 @@
             }
 
             const finalName = preview.dataset.finalName;
+            const callback = createGroupCallback; // Save before hiding clears it
             hideCreateGroupModal();
 
-            if (createGroupCallback) {
-                createGroupCallback(finalName);
+            if (callback) {
+                callback(finalName);
             }
         }
 

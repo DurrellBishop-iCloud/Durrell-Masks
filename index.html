@@ -73,6 +73,13 @@
             color: white;
         }
 
+        .tap-hint {
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            padding: 2px 0;
+        }
+
         /* View containers */
         .view {
             display: none;
@@ -902,6 +909,7 @@
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
         </div>
+        <div class="tap-hint">tap screen to change masks</div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -4222,17 +4230,11 @@
                     return false; // Don't continue to main app
                 }
 
-                // Skip title if already seen this session (e.g., switching groups)
-                if (sessionStorage.getItem('title_seen')) {
-                    return true;
-                }
-
                 // Try to load title config - don't wait for click, just show it
                 try {
                     this.config = await this.loadConfig();
                     if (this.config && this.config.configured && this.config.image) {
                         this.showTitleScreen(); // Don't await - app loads behind
-                        sessionStorage.setItem('title_seen', '1');
                     }
                 } catch (e) {
                     console.log('No title configured:', e.message);

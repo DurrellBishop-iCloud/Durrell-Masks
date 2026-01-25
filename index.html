@@ -3856,10 +3856,33 @@
         });
 
         // Group Picker Modal (for switching groups only, no edit)
-        function showGroupPicker() {
+        async function showGroupPicker() {
             const modal = document.getElementById('groupPickerModal');
             const list = document.getElementById('groupPickerList');
-            const groups = getSavedGroups().filter(g => g !== 'public' && g !== 'local');
+
+            // Get local saved groups
+            let groups = getSavedGroups().filter(g => g !== 'public' && g !== 'local');
+
+            // If admin, also fetch all server groups
+            if (isAdmin) {
+                try {
+                    const response = await fetch(`${WORKER_URL}/groups`);
+                    const data = await response.json();
+                    if (data.groups) {
+                        // Merge server groups with local, avoiding duplicates
+                        data.groups.forEach(g => {
+                            if (!groups.includes(g) && g !== 'public' && g !== 'local') {
+                                groups.push(g);
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch server groups:', e);
+                }
+            }
+
+            // Sort alphabetically
+            groups.sort();
 
             let html = `
                 <button class="modal-btn" id="newGroupPickerBtn">

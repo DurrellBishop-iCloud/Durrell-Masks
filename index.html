@@ -822,7 +822,13 @@
     <div id="titleAdminPanel" class="hidden">
         <div class="title-admin-section">
             <h2>Title Screen Manager</h2>
-            <p style="color:#666;text-align:center;margin-bottom:20px;">Upload an image to show before the app loads</p>
+
+            <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;">
+                <button class="title-admin-btn" id="titleTypePublicBtn" style="flex:1;">Public Title</button>
+                <button class="title-admin-btn" id="titleTypeLocalBtn" style="flex:1;">Local/Groups Title</button>
+            </div>
+
+            <p id="titleTypeDesc" style="color:#666;text-align:center;margin-bottom:20px;">Shows when viewing Public masks</p>
 
             <img id="titlePreviewImg" class="title-preview" src="" alt="Preview">
 
@@ -4277,6 +4283,7 @@
             config: null,
             isAdmin: false,
             pendingImage: null,
+            titleType: 'public', // 'public' or 'local'
 
             async init() {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -4288,9 +4295,12 @@
                     return false; // Don't continue to main app
                 }
 
+                // Determine title type based on group
+                this.titleType = (currentGroup === 'public') ? 'public' : 'local';
+
                 // Try to load title config - don't wait for click, just show it
                 try {
-                    this.config = await this.loadConfig();
+                    this.config = await this.loadConfig(this.titleType);
                     if (this.config && this.config.configured && this.config.image) {
                         this.showTitleScreen(); // Don't await - app loads behind
                     }
@@ -4301,8 +4311,8 @@
                 return true; // Continue to main app immediately
             },
 
-            async loadConfig() {
-                const response = await fetch(`${this.WORKER_URL}/title`);
+            async loadConfig(type = 'public') {
+                const response = await fetch(`${this.WORKER_URL}/title?type=${type}`);
                 if (!response.ok) return null;
                 return await response.json();
             },
@@ -4334,10 +4344,27 @@
                 };
             },
 
+            adminTitleType: 'public', // Currently selected in admin
+
             showAdminPanel() {
                 document.getElementById('titleAdminPanel').classList.remove('hidden');
+                this.adminTitleType = 'public';
+                this.updateAdminTypeButtons();
                 this.loadCurrentTitle();
                 this.setupAdminEvents();
+            },
+
+            updateAdminTypeButtons() {
+                const publicBtn = document.getElementById('titleTypePublicBtn');
+                const localBtn = document.getElementById('titleTypeLocalBtn');
+                const desc = document.getElementById('titleTypeDesc');
+
+                publicBtn.style.background = this.adminTitleType === 'public' ? '#4CAF50' : '#333';
+                localBtn.style.background = this.adminTitleType === 'local' ? '#4CAF50' : '#333';
+
+                desc.textContent = this.adminTitleType === 'public'
+                    ? 'Shows when viewing Public masks'
+                    : 'Shows when viewing Local or custom group masks';
             },
 
             async loadCurrentTitle() {
@@ -4345,7 +4372,7 @@
                 const status = document.getElementById('titleAdminStatus');
 
                 try {
-                    const config = await this.loadConfig();
+                    const config = await this.loadConfig(this.adminTitleType);
                     if (config && config.configured && config.image) {
                         preview.src = `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@${GITHUB_BRANCH}/${config.image}?_=${config.updated || Date.now()}`;
                         status.textContent = 'Current title loaded';
@@ -4365,8 +4392,26 @@
                 const uploadBtn = document.getElementById('titleUploadBtn');
                 const removeBtn = document.getElementById('titleRemoveBtn');
                 const closeBtn = document.getElementById('titleCloseBtn');
+                const publicBtn = document.getElementById('titleTypePublicBtn');
+                const localBtn = document.getElementById('titleTypeLocalBtn');
                 const preview = document.getElementById('titlePreviewImg');
                 const status = document.getElementById('titleAdminStatus');
+
+                publicBtn.addEventListener('click', () => {
+                    this.adminTitleType = 'public';
+                    this.updateAdminTypeButtons();
+                    this.pendingImage = null;
+                    uploadBtn.disabled = true;
+                    this.loadCurrentTitle();
+                });
+
+                localBtn.addEventListener('click', () => {
+                    this.adminTitleType = 'local';
+                    this.updateAdminTypeButtons();
+                    this.pendingImage = null;
+                    uploadBtn.disabled = true;
+                    this.loadCurrentTitle();
+                });
 
                 selectBtn.addEventListener('click', () => fileInput.click());
 
@@ -4405,11 +4450,13 @@
                 uploadBtn.disabled = true;
                 status.textContent = 'Uploading...';
 
+                const imagePath = this.adminTitleType === 'local' ? 'title/local-title-image.png' : 'title/title-image.png';
+
                 try {
                     const response = await fetch(`${this.WORKER_URL}/title`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ imageData: this.pendingImage })
+                        body: JSON.stringify({ imageData: this.pendingImage, type: this.adminTitleType })
                     });
 
                     const result = await response.json();
@@ -4421,7 +4468,7 @@
                     // Purge jsDelivr cache so new image shows immediately
                     status.textContent = 'Purging cache...';
                     try {
-                        await fetch(`https://purge.jsdelivr.net/gh/${GITHUB_REPO}@${GITHUB_BRANCH}/title/title-image.png`);
+                        await fetch(`https://purge.jsdelivr.net/gh/${GITHUB_REPO}@${GITHUB_BRANCH}/${imagePath}`);
                     } catch (e) {
                         console.log('Cache purge failed (non-critical):', e);
                     }
@@ -4440,13 +4487,14 @@
             async removeTitle() {
                 const status = document.getElementById('titleAdminStatus');
                 const preview = document.getElementById('titlePreviewImg');
+                const typeName = this.adminTitleType === 'local' ? 'Local/Groups' : 'Public';
 
-                if (!confirm('Remove the title screen?')) return;
+                if (!confirm(`Remove the ${typeName} title screen?`)) return;
 
                 status.textContent = 'Removing...';
 
                 try {
-                    const response = await fetch(`${this.WORKER_URL}/title`, {
+                    const response = await fetch(`${this.WORKER_URL}/title?type=${this.adminTitleType}`, {
                         method: 'DELETE'
                     });
 

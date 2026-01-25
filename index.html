@@ -694,14 +694,15 @@
         .qr-code canvas {
         }
         .share-url {
-            background: #141414;
-            padding: 10px;
-            border: 1px solid #888;
+            background: none;
+            padding: 8px 0;
+            border: none;
             font-family: monospace;
-            font-size: 12px;
+            font-size: 11px;
+            color: #888;
             word-break: break-all;
             text-align: center;
-            margin: 12px 0;
+            margin: 8px 0;
         }
 
         /* ============================================
@@ -850,18 +851,13 @@
     <!-- Share Group Modal -->
     <div class="modal-overlay hidden" id="shareModal">
         <div class="modal">
-            <h3>Share This Group</h3>
-            <p style="text-align:center;color:#888;margin:0 0 12px 0;">Scan or share this link:</p>
-            <div class="qr-code" id="qrCode"></div>
-            <div class="share-url" id="shareUrl"></div>
-            <button class="modal-btn primary" id="copyLinkBtn">
-                <span class="icon">📋</span>
-                Copy Link
-            </button>
-            <button class="modal-btn" id="shareLinkBtn">
+            <h3>Scan or share</h3>
+            <button class="modal-btn primary" id="shareLinkBtn">
                 <span class="icon">📤</span>
-                Share...
+                Share
             </button>
+            <div class="share-url" id="shareUrl"></div>
+            <div class="qr-code" id="qrCode"></div>
             <button class="modal-cancel" id="shareCancelBtn">Close</button>
         </div>
     </div>
@@ -3838,7 +3834,6 @@
         document.getElementById('saveCancelBtn')?.addEventListener('click', hideSaveModal);
 
         // Share Modal
-        document.getElementById('copyLinkBtn').addEventListener('click', copyShareLink);
         document.getElementById('shareLinkBtn').addEventListener('click', shareLink);
         document.getElementById('shareCancelBtn').addEventListener('click', hideShareModal);
 

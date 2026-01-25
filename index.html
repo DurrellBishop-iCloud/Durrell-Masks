@@ -733,6 +733,32 @@
             display: none;
         }
 
+        /* Made for iPhone screen */
+        #desktopBlock {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #desktopBlock.hidden {
+            display: none;
+        }
+
+        #desktopBlock h1 {
+            color: black;
+            font-size: 24px;
+            font-weight: 400;
+            text-align: center;
+        }
+
         #titleImage {
             width: 100%;
             height: auto;
@@ -810,6 +836,11 @@
     </style>
 </head>
 <body>
+    <!-- Made for iPhone screen (shown on desktop) -->
+    <div id="desktopBlock" class="hidden">
+        <h1>Made for iPhone</h1>
+    </div>
+
     <!-- ============================================
          TITLE SCREEN MODULE - KEEP SEPARATE
          ============================================ -->
@@ -4526,6 +4557,13 @@
 
         // Initialize directly (DOM is ready since module uses top-level await)
         (async () => {
+            // Check if on mobile device - block desktop users
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (!isMobile) {
+                document.getElementById('desktopBlock').classList.remove('hidden');
+                return; // Stop initialization
+            }
+
             // Check title module first
             const continueToApp = await TitleModule.init();
             if (!continueToApp) return; // Admin mode, don't load app

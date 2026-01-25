@@ -835,6 +835,10 @@
                 <button class="control-btn" id="eraseBtn">Erase</button>
                 <button class="control-btn" id="createTextureBtn">Change Texture</button>
             </div>
+            <div class="controls hidden" id="createTextureControls">
+                <button class="control-btn" id="cancelCreateTextureBtn">Cancel</button>
+                <button class="control-btn success" id="captureCreateTextureBtn">Capture Texture</button>
+            </div>
             <div class="controls hidden" id="eyeControls">
                 <button class="control-btn eye-btn" id="eyeRightBtn">Left Eye Location</button>
                 <button class="control-btn primary" id="saveBtn">Save</button>
@@ -2161,16 +2165,8 @@
                 exitEyePointMode();
                 document.getElementById('toleranceRow').classList.add('hidden');
 
-                // Show texture controls (reuse capture controls area)
-                const captureControls = document.getElementById('captureControls');
-                captureControls.innerHTML = `
-                    <button class="control-btn" id="cancelCreateTextureBtn">Cancel</button>
-                    <button class="control-btn success" id="captureCreateTextureBtn">Capture Texture</button>
-                `;
-                captureControls.classList.remove('hidden');
-
-                document.getElementById('cancelCreateTextureBtn').addEventListener('click', stopCreateTextureMode);
-                document.getElementById('captureCreateTextureBtn').addEventListener('click', captureCreateTexture);
+                // Show texture controls at top
+                document.getElementById('createTextureControls').classList.remove('hidden');
 
                 updateStatus('capture', 'Point camera at texture and tap Capture');
 
@@ -2194,13 +2190,10 @@
             createTextureVideo = null;
 
             // Restore UI
-            document.getElementById('captureControls').innerHTML = '<button class="control-btn primary" id="takePhotoBtn">Take Photo</button>';
-            document.getElementById('captureControls').classList.add('hidden');
+            document.getElementById('createTextureControls').classList.add('hidden');
             document.getElementById('editControls').classList.remove('hidden');
-                document.getElementById('eyeControls').classList.remove('hidden');
+            document.getElementById('eyeControls').classList.remove('hidden');
             document.getElementById('toleranceRow').classList.remove('hidden');
-
-            document.getElementById('takePhotoBtn').addEventListener('click', takePhoto);
 
             // Redraw mask
             if (currentMaskData) {
@@ -2264,18 +2257,15 @@
             createTextureVideo = null;
 
             // Restore UI
-            document.getElementById('captureControls').innerHTML = '<button class="control-btn primary" id="takePhotoBtn">Take Photo</button>';
-            document.getElementById('captureControls').classList.add('hidden');
+            document.getElementById('createTextureControls').classList.add('hidden');
             document.getElementById('editControls').classList.remove('hidden');
-                document.getElementById('eyeControls').classList.remove('hidden');
+            document.getElementById('eyeControls').classList.remove('hidden');
             document.getElementById('toleranceRow').classList.remove('hidden');
-
-            document.getElementById('takePhotoBtn').addEventListener('click', takePhoto);
 
             // Redraw with markers
             drawEyePointMarkers();
 
-            updateStatus('capture', 'Texture captured! Add eye points and publish.');
+            updateStatus('capture', 'Texture captured! Add eye points and save.');
         }
 
         async function uploadToGitHub(token, path, contentBase64, message, sha = null) {
@@ -3619,6 +3609,8 @@
 
         // Create mask texture
         document.getElementById('createTextureBtn').addEventListener('click', startCreateTextureMode);
+        document.getElementById('cancelCreateTextureBtn').addEventListener('click', stopCreateTextureMode);
+        document.getElementById('captureCreateTextureBtn').addEventListener('click', captureCreateTexture);
 
         document.getElementById('takePhotoBtn').addEventListener('click', takePhoto);
         document.getElementById('retakeBtn').addEventListener('click', retakePhoto);

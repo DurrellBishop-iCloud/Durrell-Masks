@@ -2086,8 +2086,8 @@
 
                     // Update group info from response
                     if (galleryManifest.name) {
-                        currentGroupName = galleryManifest.name;
-                        // Store group name for later use in group picker
+                        currentGroupName = galleryManifest.name + '-masks';
+                        // Store group name for later use in group picker (without -masks suffix)
                         const groupNames = JSON.parse(localStorage.getItem('group_names') || '{}');
                         groupNames[currentGroup] = galleryManifest.name;
                         localStorage.setItem('group_names', JSON.stringify(groupNames));
@@ -3557,20 +3557,23 @@
 
             // For admin: show all saved groups (except current which is already shown)
             // For regular users: only show other friend groups they have tokens for
+            const storedNames = JSON.parse(localStorage.getItem('group_names') || '{}');
             if (isAdmin) {
                 const groups = getSavedGroups().filter(g => g !== 'public' && g !== 'local' && g !== currentGroup);
                 if (groups.length > 0) {
-                    html += groups.map(g => `
-                        <button class="modal-btn" data-save-group="${g}">${g}</button>
-                    `).join('');
+                    html += groups.map(g => {
+                        const name = (storedNames[g] || g) + '-masks';
+                        return `<button class="modal-btn" data-save-group="${g}">${name}</button>`;
+                    }).join('');
                 }
             } else if (friendGroupIds.length > 0) {
                 // Show other friend groups user can upload to (not current)
                 const otherGroups = friendGroupIds.filter(g => g !== currentGroup);
                 if (otherGroups.length > 0) {
-                    html += otherGroups.map(g => `
-                        <button class="modal-btn" data-save-group="${g}">${g}</button>
-                    `).join('');
+                    html += otherGroups.map(g => {
+                        const name = (storedNames[g] || g) + '-masks';
+                        return `<button class="modal-btn" data-save-group="${g}">${name}</button>`;
+                    }).join('');
                 }
             }
 
@@ -4061,7 +4064,8 @@
             `;
 
             localGroups.forEach(g => {
-                const displayName = groupInfo[g] || g;
+                const baseName = groupInfo[g] || g;
+                const displayName = baseName + '-masks';
                 const isFriend = g.startsWith('f_');
                 const isPublicGroup = g.startsWith('g_');
                 const badge = isAdmin ? (isFriend ? ' (friend)' : (isPublicGroup ? ' (public)' : '')) : '';
@@ -4589,10 +4593,11 @@
                 if (publicGroups.length > 0) {
                     html += '<div style="font-size:11px;margin:8px 0 4px 0;">Public Groups</div>';
                     publicGroups.forEach(g => {
+                        const displayName = (g.name || g.id) + '-masks';
                         html += `
                             <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:#222;border-radius:4px;margin-bottom:4px;">
                                 <div style="flex:1;">
-                                    <div style="font-size:14px;">${g.name || g.id}</div>
+                                    <div style="font-size:14px;">${displayName}</div>
                                     <div style="font-size:10px;color:#666;">${g.id}</div>
                                 </div>
                                 <button class="modal-btn admin-goto-btn" data-group="${g.id}" style="width:auto;padding:6px 12px;margin:0;">View</button>
@@ -4605,10 +4610,11 @@
                     html += '<div style="font-size:11px;margin:12px 0 4px 0;">Friend Groups</div>';
                     friendGroups.forEach(g => {
                         const isRevoked = g.revoked;
+                        const displayName = (g.name || g.id) + '-masks';
                         html += `
                             <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:#222;border-radius:4px;margin-bottom:4px;${isRevoked ? 'opacity:0.5;' : ''}">
                                 <div style="flex:1;">
-                                    <div style="font-size:14px;">${g.name || g.id} ${isRevoked ? '(revoked)' : ''}</div>
+                                    <div style="font-size:14px;">${displayName} ${isRevoked ? '(revoked)' : ''}</div>
                                     <div style="font-size:10px;color:#666;">${g.id}</div>
                                 </div>
                                 <div style="display:flex;gap:4px;">

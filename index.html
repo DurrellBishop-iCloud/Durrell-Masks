@@ -855,12 +855,17 @@
         <div class="title-admin-section">
             <h2>Title Screen Manager</h2>
 
-            <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;">
-                <button class="title-admin-btn" id="titleTypePublicBtn" style="flex:1;">Public Title</button>
-                <button class="title-admin-btn" id="titleTypeLocalBtn" style="flex:1;">Local/Groups Title</button>
+            <div style="display:flex;gap:10px;justify-content:center;margin-bottom:10px;">
+                <button class="title-admin-btn" id="titleTypePublicBtn" style="flex:1;">Default</button>
+                <button class="title-admin-btn" id="titleTypeLocalBtn" style="flex:1;">Local</button>
+                <button class="title-admin-btn" id="titleTypeGroupBtn" style="flex:1;">Group</button>
             </div>
 
-            <p id="titleTypeDesc" style="color:#666;text-align:center;margin-bottom:20px;">Shows when viewing Public masks</p>
+            <select id="titleGroupSelect" style="display:none;width:100%;padding:12px;margin-bottom:10px;background:#333;color:#fff;border:none;border-radius:4px;font-size:16px;">
+                <option value="">Select a group...</option>
+            </select>
+
+            <p id="titleTypeDesc" style="color:#666;text-align:center;margin-bottom:20px;">Default title for all groups</p>
 
             <img id="titlePreviewImg" class="title-preview" src="" alt="Preview">
 
@@ -4931,6 +4936,7 @@
             },
 
             adminTitleType: 'public', // Currently selected in admin
+            adminGroups: [], // Cached groups list
 
             showAdminPanel() {
                 document.getElementById('titleAdminPanel').classList.remove('hidden');
@@ -4943,14 +4949,42 @@
             updateAdminTypeButtons() {
                 const publicBtn = document.getElementById('titleTypePublicBtn');
                 const localBtn = document.getElementById('titleTypeLocalBtn');
+                const groupBtn = document.getElementById('titleTypeGroupBtn');
+                const groupSelect = document.getElementById('titleGroupSelect');
                 const desc = document.getElementById('titleTypeDesc');
+
+                const isGroup = this.adminTitleType !== 'public' && this.adminTitleType !== 'local';
 
                 publicBtn.style.background = this.adminTitleType === 'public' ? '#4CAF50' : '#333';
                 localBtn.style.background = this.adminTitleType === 'local' ? '#4CAF50' : '#333';
+                groupBtn.style.background = isGroup ? '#4CAF50' : '#333';
 
-                desc.textContent = this.adminTitleType === 'public'
-                    ? 'Shows when viewing Public masks'
-                    : 'Shows when viewing Local or custom group masks';
+                groupSelect.style.display = isGroup ? 'block' : 'none';
+
+                if (this.adminTitleType === 'public') {
+                    desc.textContent = 'Default title for all groups';
+                } else if (this.adminTitleType === 'local') {
+                    desc.textContent = 'Title for Local-masks';
+                } else {
+                    const group = this.adminGroups.find(g => g.id === this.adminTitleType);
+                    const name = group ? group.name + '-masks' : this.adminTitleType;
+                    desc.textContent = `Title for ${name}`;
+                }
+            },
+
+            async loadGroups() {
+                try {
+                    const response = await fetch(withAdmin(`${WORKER_URL}/groups`));
+                    const data = await response.json();
+                    if (data.groups && Array.isArray(data.groups)) {
+                        this.adminGroups = data.groups;
+                        const select = document.getElementById('titleGroupSelect');
+                        select.innerHTML = '<option value="">Select a group...</option>' +
+                            data.groups.map(g => `<option value="${g.id}">${(g.name || g.id)}-masks</option>`).join('');
+                    }
+                } catch (e) {
+                    console.error('Failed to load groups:', e);
+                }
             },
 
             async loadCurrentTitle() {
@@ -4980,6 +5014,8 @@
                 const closeBtn = document.getElementById('titleCloseBtn');
                 const publicBtn = document.getElementById('titleTypePublicBtn');
                 const localBtn = document.getElementById('titleTypeLocalBtn');
+                const groupBtn = document.getElementById('titleTypeGroupBtn');
+                const groupSelect = document.getElementById('titleGroupSelect');
                 const preview = document.getElementById('titlePreviewImg');
                 const status = document.getElementById('titleAdminStatus');
 
@@ -4997,6 +5033,27 @@
                     this.pendingImage = null;
                     uploadBtn.disabled = true;
                     this.loadCurrentTitle();
+                });
+
+                groupBtn.addEventListener('click', async () => {
+                    await this.loadGroups();
+                    this.adminTitleType = 'group'; // Temporary until they select
+                    this.updateAdminTypeButtons();
+                    this.pendingImage = null;
+                    uploadBtn.disabled = true;
+                    preview.src = '';
+                    status.textContent = 'Select a group from the dropdown';
+                });
+
+                groupSelect.addEventListener('change', () => {
+                    const groupId = groupSelect.value;
+                    if (groupId) {
+                        this.adminTitleType = groupId;
+                        this.updateAdminTypeButtons();
+                        this.pendingImage = null;
+                        uploadBtn.disabled = true;
+                        this.loadCurrentTitle();
+                    }
                 });
 
                 selectBtn.addEventListener('click', () => fileInput.click());
@@ -5081,7 +5138,16 @@
             async removeTitle() {
                 const status = document.getElementById('titleAdminStatus');
                 const preview = document.getElementById('titlePreviewImg');
-                const typeName = this.adminTitleType === 'local' ? 'Local/Groups' : 'Public';
+
+                let typeName;
+                if (this.adminTitleType === 'local') {
+                    typeName = 'Local-masks';
+                } else if (this.adminTitleType === 'public') {
+                    typeName = 'Default';
+                } else {
+                    const group = this.adminGroups.find(g => g.id === this.adminTitleType);
+                    typeName = group ? group.name + '-masks' : this.adminTitleType;
+                }
 
                 if (!confirm(`Remove the ${typeName} title screen?`)) return;
 

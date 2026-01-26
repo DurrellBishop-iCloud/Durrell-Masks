@@ -2087,6 +2087,10 @@
                     // Update group info from response
                     if (galleryManifest.name) {
                         currentGroupName = galleryManifest.name;
+                        // Store group name for later use in group picker
+                        const groupNames = JSON.parse(localStorage.getItem('group_names') || '{}');
+                        groupNames[currentGroup] = galleryManifest.name;
+                        localStorage.setItem('group_names', JSON.stringify(groupNames));
                     }
                     if (galleryManifest.type) {
                         currentGroupType = galleryManifest.type;
@@ -4012,6 +4016,14 @@
             Object.keys(friendTokens).forEach(token => {
                 if (!localGroups.includes(token)) {
                     localGroups.push(token);
+                }
+            });
+
+            // Load stored group names from localStorage
+            const storedNames = JSON.parse(localStorage.getItem('group_names') || '{}');
+            Object.entries(storedNames).forEach(([id, name]) => {
+                if (!groupInfo[id]) {
+                    groupInfo[id] = name;
                 }
             });
 

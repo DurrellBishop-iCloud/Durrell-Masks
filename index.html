@@ -975,6 +975,7 @@
 
             <div class="modal-divider"></div>
             <button class="modal-cancel" id="adminPanelCloseBtn">Close</button>
+            <button class="modal-btn" id="adminLogoutBtn" style="margin-top:8px;background:#666;">Log out of admin</button>
         </div>
     </div>
 
@@ -4728,6 +4729,12 @@
 
         document.getElementById('adminPanelCloseBtn').addEventListener('click', () => {
             document.getElementById('adminPanelModal').classList.add('hidden');
+        });
+
+        document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('mask_admin');
+            alert('Logged out of admin mode. Refreshing...');
+            window.location.href = window.location.pathname;
         });
 
         // Debug helper

@@ -92,21 +92,6 @@
       }
     },
     {
-      "id": "mask-1769463464815",
-      "name": "Mac-Jan26-2137",
-      "image": "groups/public/images/mask-1769463464815.png",
-      "anchors": {
-        "leftEye": {
-          "x": 0.564,
-          "y": 0.4939999062485351
-        },
-        "rightEye": {
-          "x": 0.434,
-          "y": 0.4939999062485351
-        }
-      }
-    },
-    {
       "id": "mask-1769463844205",
       "name": "Mac-Jan26-2144",
       "image": "groups/public/images/mask-1769463844205.png",

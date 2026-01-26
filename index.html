@@ -1186,11 +1186,49 @@
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
 
-        // Admin mode - use ?admin=durrell310863 to unlock admin features
-        const adminCode = urlParams.get('admin');
-        const isAdmin = adminCode === 'durrell310863' || localStorage.getItem('mask_admin') === 'true';
-        if (adminCode === 'durrell310863') {
-            localStorage.setItem('mask_admin', 'true');
+        // Admin mode - use ?admin=<code> to unlock admin features
+        // Code is verified against Worker, not hardcoded here
+        const adminCodeParam = urlParams.get('admin');
+        let isAdmin = localStorage.getItem('mask_admin') === 'true';
+        let storedAdminCode = localStorage.getItem('mask_admin_code') || '';
+
+        // Verify admin code against Worker if provided in URL
+        async function verifyAdminCode(code) {
+            try {
+                const response = await fetch(`${WORKER_URL}/auth/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                const data = await response.json();
+                return data.valid === true;
+            } catch (e) {
+                console.error('Admin verification failed:', e);
+                return false;
+            }
+        }
+
+        // If admin code in URL, verify it
+        if (adminCodeParam) {
+            // Show loading while verifying
+            (async () => {
+                const valid = await verifyAdminCode(adminCodeParam);
+                if (valid) {
+                    localStorage.setItem('mask_admin', 'true');
+                    localStorage.setItem('mask_admin_code', adminCodeParam);
+                    isAdmin = true;
+                    storedAdminCode = adminCodeParam;
+                    updateHeader();
+                    // Clean URL to remove admin code
+                    const cleanUrl = new URL(window.location.href);
+                    cleanUrl.searchParams.delete('admin');
+                    window.history.replaceState({}, '', cleanUrl.toString());
+                } else {
+                    alert('Invalid admin code');
+                    localStorage.removeItem('mask_admin');
+                    localStorage.removeItem('mask_admin_code');
+                }
+            })();
         }
 
         // Handle friend token - ?friend=xxx
@@ -1253,9 +1291,10 @@
 
         // Helper: Add admin param to URL if admin
         function withAdmin(url) {
-            if (isAdmin) {
+            const code = localStorage.getItem('mask_admin_code');
+            if (isAdmin && code) {
                 const sep = url.includes('?') ? '&' : '?';
-                return url + sep + 'admin=durrell310863';
+                return url + sep + 'admin=' + encodeURIComponent(code);
             }
             return url;
         }
@@ -4753,6 +4792,7 @@
 
         document.getElementById('adminLogoutBtn').addEventListener('click', () => {
             localStorage.removeItem('mask_admin');
+            localStorage.removeItem('mask_admin_code');
             alert('Logged out of admin mode. Refreshing...');
             window.location.href = window.location.pathname;
         });
@@ -4979,7 +5019,8 @@
             async loadGroups() {
                 try {
                     // Use admin param directly since we're in title admin mode
-                    const response = await fetch(`${this.WORKER_URL}/groups?admin=durrell310863`);
+                    const adminCode = localStorage.getItem('mask_admin_code') || '';
+                    const response = await fetch(`${this.WORKER_URL}/groups?admin=${encodeURIComponent(adminCode)}`);
                     const data = await response.json();
                     if (data.groups && Array.isArray(data.groups)) {
                         this.adminGroups = data.groups;
@@ -5136,7 +5177,8 @@
                 }
 
                 try {
-                    const response = await fetch(`${this.WORKER_URL}/title?admin=durrell310863`, {
+                    const adminCode = localStorage.getItem('mask_admin_code') || '';
+                    const response = await fetch(`${this.WORKER_URL}/title?admin=${encodeURIComponent(adminCode)}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ imageData: this.pendingImage, group: this.adminTitleType })
@@ -5186,7 +5228,8 @@
                 status.textContent = 'Removing...';
 
                 try {
-                    const response = await fetch(`${this.WORKER_URL}/title?group=${this.adminTitleType}&admin=durrell310863`, {
+                    const adminCode = localStorage.getItem('mask_admin_code') || '';
+                    const response = await fetch(`${this.WORKER_URL}/title?group=${this.adminTitleType}&admin=${encodeURIComponent(adminCode)}`, {
                         method: 'DELETE'
                     });
 

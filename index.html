@@ -945,6 +945,11 @@
                 Share This Group
             </button>
 
+            <div class="modal-divider"></div>
+            <button class="modal-btn" id="exportLocalBtn">Export Local Masks</button>
+            <input type="file" id="importLocalInput" accept=".json,.maskpack" style="display:none;">
+            <button class="modal-btn" id="importLocalBtn">Import Masks</button>
+
             <button class="modal-cancel" id="groupCloseBtn">Close</button>
         </div>
     </div>
@@ -4246,6 +4251,70 @@
             document.getElementById('groupMenuModal').classList.add('hidden');
         }
 
+        // Export local masks to file
+        function exportLocalMasks() {
+            const localMasks = JSON.parse(localStorage.getItem('local_masks') || '[]');
+            if (localMasks.length === 0) {
+                alert('No local masks to export');
+                return;
+            }
+
+            const exportData = {
+                version: 1,
+                exported: new Date().toISOString(),
+                type: 'local_masks',
+                masks: localMasks
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `masks-backup-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            alert(`Exported ${localMasks.length} masks`);
+        }
+
+        // Import masks from file
+        function importLocalMasks(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    if (!data.masks || !Array.isArray(data.masks)) {
+                        alert('Invalid backup file');
+                        return;
+                    }
+
+                    const localMasks = JSON.parse(localStorage.getItem('local_masks') || '[]');
+                    let imported = 0;
+
+                    data.masks.forEach(mask => {
+                        // Check if mask already exists (by id)
+                        const exists = localMasks.some(m => m.id === mask.id);
+                        if (!exists && mask.id && mask.image) {
+                            localMasks.push(mask);
+                            imported++;
+                        }
+                    });
+
+                    localStorage.setItem('local_masks', JSON.stringify(localMasks));
+                    alert(`Imported ${imported} masks (${data.masks.length - imported} duplicates skipped)`);
+
+                    // Refresh if on local group
+                    if (currentGroup === 'local') {
+                        window.location.reload();
+                    }
+                } catch (err) {
+                    alert('Error reading file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
         // Select a group and go to make mask
         function selectGroupAndMake(groupName) {
             hideGroupMenu();
@@ -4281,6 +4350,24 @@
 
         document.getElementById('localGroupBtn').addEventListener('click', () => {
             selectGroupAndMake('local');
+        });
+
+        // Export/Import buttons
+        document.getElementById('exportLocalBtn').addEventListener('click', () => {
+            hideGroupMenu();
+            exportLocalMasks();
+        });
+
+        document.getElementById('importLocalBtn').addEventListener('click', () => {
+            document.getElementById('importLocalInput').click();
+        });
+
+        document.getElementById('importLocalInput').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                hideGroupMenu();
+                importLocalMasks(e.target.files[0]);
+                e.target.value = ''; // Reset for next import
+            }
         });
 
         document.getElementById('newGroupBtn').addEventListener('click', () => {

@@ -2123,8 +2123,10 @@
             countEl.textContent = '(' + galleryManifest.masks.length + ')';
             grid.innerHTML = '';
 
-            // Only show edit/delete for non-public groups, or if admin
-            const canEdit = currentGroup !== 'public' || isAdmin;
+            // Only show edit/delete if user can modify this group
+            // Admin can edit anything, local is always editable, friend groups need token
+            const friendTokens = JSON.parse(localStorage.getItem('friend_tokens') || '{}');
+            const canEdit = isAdmin || currentGroup === 'local' || friendTokens[currentGroup];
 
             galleryManifest.masks.forEach(mask => {
                 const item = document.createElement('div');

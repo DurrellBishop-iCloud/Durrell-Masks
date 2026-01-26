@@ -3893,17 +3893,34 @@
         }
 
         function shareLink() {
-            const shareGroup = currentGroup === 'local' ? 'public' : currentGroup;
-            const shareName = shareGroup === 'public' ? 'Mask Maker' : shareGroup;
-            const url = `https://dbgh.uk/m?group=${shareGroup}`;
+            // For friend groups, use the friend URL; otherwise use group URL
+            let url, shareName;
+            if (currentGroup === 'local') {
+                url = 'https://dbgh.uk/m';
+                shareName = 'Mask Maker';
+            } else if (currentGroup === 'public') {
+                url = 'https://dbgh.uk/m';
+                shareName = 'Mask Maker';
+            } else {
+                // Custom group - use friendly name and appropriate URL
+                shareName = currentGroupName || currentGroup;
+                // Friend groups use ?friend=, others use ?group=
+                if (currentGroup.startsWith('f_')) {
+                    url = `https://dbgh.uk/m?friend=${currentGroup}`;
+                } else {
+                    url = `https://dbgh.uk/m?group=${currentGroup}`;
+                }
+            }
             if (navigator.share) {
                 navigator.share({
-                    title: `Share ${shareName}`,
+                    title: shareName,
                     text: `Try ${shareName}!`,
                     url: url
                 });
             } else {
-                copyShareLink();
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('Link copied!');
+                });
             }
         }
 

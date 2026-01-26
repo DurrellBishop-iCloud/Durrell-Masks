@@ -3848,14 +3848,9 @@
             const qrEl = document.getElementById('qrCode');
             const btnText = document.getElementById('shareButtonText');
 
-            // Use public group when on local (local masks can't be shared)
-            const shareGroup = currentGroup === 'local' ? 'public' : currentGroup;
+            btnText.textContent = 'Share Mask Maker with friends';
 
-            // Set button text based on group
-            const shareName = (shareGroup === 'public') ? 'Mask Maker' : shareGroup;
-            btnText.textContent = `Share ${shareName} with friends`;
-
-            const shareUrl = `https://dbgh.uk/m?group=${shareGroup}`;
+            const shareUrl = 'https://dbgh.uk/m';
             urlEl.textContent = shareUrl;
 
             // Generate QR code
@@ -3876,8 +3871,7 @@
         }
 
         function copyShareLink() {
-            const shareGroup = currentGroup === 'local' ? 'public' : currentGroup;
-            const url = `https://dbgh.uk/m?group=${shareGroup}`;
+            const url = 'https://dbgh.uk/m';
             navigator.clipboard.writeText(url).then(() => {
                 alert('Link copied!');
             });

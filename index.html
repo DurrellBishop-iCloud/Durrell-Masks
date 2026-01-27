@@ -4957,7 +4957,8 @@
                 const img = document.getElementById('titleImage');
 
                 // Use jsDelivr with purge for better cache invalidation
-                const imageUrl = `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@${GITHUB_BRANCH}/${this.config.image}?_=${this.config.updated || Date.now()}`;
+                // Use raw GitHub URL to avoid jsDelivr caching issues
+                const imageUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${this.config.image}?_=${this.config.updated || Date.now()}`;
                 img.src = imageUrl;
 
                 img.onload = () => {
@@ -5040,7 +5041,8 @@
                 try {
                     const config = await this.loadConfig(this.adminTitleType);
                     if (config && config.configured && config.image) {
-                        preview.src = `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@${GITHUB_BRANCH}/${config.image}?_=${config.updated || Date.now()}`;
+                        // Use raw GitHub URL to avoid jsDelivr caching issues
+                        preview.src = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${config.image}?_=${config.updated || Date.now()}`;
                         status.textContent = 'Current title loaded';
                     } else {
                         preview.src = '';

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- Version 2.4-dev - Gestures apply to anchors -->
-<html lang="en" data-version="2.4-dev">
+<!-- Version 2.5-dev - Gestures apply to anchors -->
+<html lang="en" data-version="2.5-dev">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -997,7 +997,7 @@
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.4-dev</span></div>
+        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.5-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1157,7 +1157,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.4-dev loaded');
+        console.log('Durrell Masks v2.5-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -1175,80 +1175,40 @@
         let loadedMask = null;  // { image: HTMLImageElement, anchors: { leftEye, rightEye } }
         let maskImage = null;
 
-        // Mask adjustment for live two-finger gestures (persisted to localStorage)
-        let maskAdjust = JSON.parse(localStorage.getItem('mask_adjust') || '{"offsetX":0,"offsetY":0,"scale":1,"rotation":0}');
-
-        function saveMaskAdjust() {
-            localStorage.setItem('mask_adjust', JSON.stringify(maskAdjust));
-        }
-
-        // Apply gesture adjustments to anchor points and reset adjustments
-        function applyAdjustmentsToAnchors() {
-            console.log('applyAdjustmentsToAnchors called, maskAdjust:', JSON.stringify(maskAdjust));
-            if (!loadedMask || !loadedMask.anchors) {
-                console.log('No loaded mask or anchors');
-                return false;
-            }
-            if (maskAdjust.offsetX === 0 && maskAdjust.offsetY === 0 &&
-                maskAdjust.scale === 1 && maskAdjust.rotation === 0) {
-                console.log('No adjustments to apply');
-                return false;
-            }
-            console.log('Applying adjustments to anchors...');
-            const appliedScale = maskAdjust.scale;
-            const appliedRotation = maskAdjust.rotation;
-            const appliedOffsetX = maskAdjust.offsetX;
-            const appliedOffsetY = maskAdjust.offsetY;
-
+        // Direct anchor adjustment via gestures (scale and rotate only)
+        function adjustAnchors(scaleRatio, rotationDelta) {
+            if (!loadedMask || !loadedMask.anchors) return;
             const anchors = loadedMask.anchors;
 
-            // Get current anchor positions in mask pixel coordinates
-            const leftX = anchors.leftEye.x * loadedMask.width;
-            const leftY = anchors.leftEye.y * loadedMask.height;
-            const rightX = anchors.rightEye.x * loadedMask.width;
-            const rightY = anchors.rightEye.y * loadedMask.height;
+            // Get current anchor positions (normalized 0-1)
+            const leftX = anchors.leftEye.x;
+            const leftY = anchors.leftEye.y;
+            const rightX = anchors.rightEye.x;
+            const rightY = anchors.rightEye.y;
 
-            // Calculate midpoint and distance
+            // Calculate midpoint
             const midX = (leftX + rightX) / 2;
             const midY = (leftY + rightY) / 2;
-            const dx = rightX - leftX;
-            const dy = rightY - leftY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const angle = Math.atan2(dy, dx);
 
-            // Apply scale: divide distance by gestureScale (bigger gesture = anchors closer)
-            const newDist = dist / maskAdjust.scale;
+            // Vector from mid to right anchor
+            let dx = rightX - midX;
+            let dy = rightY - midY;
 
-            // Apply rotation: subtract gesture rotation from anchor angle
-            const newAngle = angle - maskAdjust.rotation;
+            // Apply scale (closer anchors = bigger mask on face)
+            dx /= scaleRatio;
+            dy /= scaleRatio;
 
-            // Calculate new anchor positions from midpoint
-            const halfDist = newDist / 2;
-            const newLeftX = midX - Math.cos(newAngle) * halfDist;
-            const newLeftY = midY - Math.sin(newAngle) * halfDist;
-            const newRightX = midX + Math.cos(newAngle) * halfDist;
-            const newRightY = midY + Math.sin(newAngle) * halfDist;
+            // Apply rotation
+            const cos = Math.cos(rotationDelta);
+            const sin = Math.sin(rotationDelta);
+            const newDx = dx * cos - dy * sin;
+            const newDy = dx * sin + dy * cos;
 
-            // Apply offset (approximate: use mask dimensions as reference)
-            const offsetScale = 0.5; // Adjustment factor
-            const offsetNormX = (maskAdjust.offsetX * offsetScale) / loadedMask.width;
-            const offsetNormY = (maskAdjust.offsetY * offsetScale) / loadedMask.height;
-
-            // Update anchors (normalized 0-1)
-            anchors.leftEye.x = Math.max(0, Math.min(1, newLeftX / loadedMask.width + offsetNormX));
-            anchors.leftEye.y = Math.max(0, Math.min(1, newLeftY / loadedMask.height + offsetNormY));
-            anchors.rightEye.x = Math.max(0, Math.min(1, newRightX / loadedMask.width + offsetNormX));
-            anchors.rightEye.y = Math.max(0, Math.min(1, newRightY / loadedMask.height + offsetNormY));
-
-            console.log('New anchors:', JSON.stringify(anchors));
-
-            // Reset adjustments
-            maskAdjust = { offsetX: 0, offsetY: 0, scale: 1, rotation: 0 };
-            saveMaskAdjust();
-
-            console.log('Adjustments applied and reset');
-            alert('Anchors adjusted!\nScale: ' + appliedScale.toFixed(2) + '\nRotation: ' + (appliedRotation * 180 / Math.PI).toFixed(1) + '°\nOffset: ' + appliedOffsetX.toFixed(0) + ',' + appliedOffsetY.toFixed(0));
-            return true;
+            // Update anchors (clamped to 0-1)
+            anchors.leftEye.x = Math.max(0, Math.min(1, midX - newDx));
+            anchors.leftEye.y = Math.max(0, Math.min(1, midY - newDy));
+            anchors.rightEye.x = Math.max(0, Math.min(1, midX + newDx));
+            anchors.rightEye.y = Math.max(0, Math.min(1, midY + newDy));
         }
 
         // Stroke effect
@@ -1734,15 +1694,14 @@
             // Draw the mask with transformation
             trackCtx.save();
 
-            // Move to face center, then apply user offset
-            trackCtx.translate(faceCenterX + maskAdjust.offsetX, faceCenterY + maskAdjust.offsetY);
+            // Move to face center
+            trackCtx.translate(faceCenterX, faceCenterY);
 
-            // Rotate to match face angle, plus user rotation adjustment
-            trackCtx.rotate(rotation + maskAdjust.rotation);
+            // Rotate to match face angle
+            trackCtx.rotate(rotation);
 
-            // Scale to match face size, times user scale adjustment
-            // scaleX may include mouth-based stretch, scaleY is eye-based only
-            trackCtx.scale(scaleX * maskAdjust.scale, scaleY * maskAdjust.scale);
+            // Scale to match face size
+            trackCtx.scale(scaleX, scaleY);
 
             // Draw image centered on anchor midpoint
             trackCtx.drawImage(
@@ -1805,9 +1764,6 @@
 
         function openEditMask() {
             if (!loadedMask || !maskImage) return;
-
-            // Apply any gesture adjustments to anchors before editing
-            applyAdjustmentsToAnchors();
 
             // Stop face tracking while editing
             stopTracking();
@@ -4560,52 +4516,39 @@
                     e.stopPropagation();
                     const data = getTouchData(e);
                     gestureState = {
-                        startCenterX: data.centerX,
-                        startCenterY: data.centerY,
-                        startDistance: data.distance,
-                        startAngle: data.angle,
-                        startOffsetX: maskAdjust.offsetX,
-                        startOffsetY: maskAdjust.offsetY,
-                        startScale: maskAdjust.scale,
-                        startRotation: maskAdjust.rotation
+                        lastDistance: data.distance,
+                        lastAngle: data.angle
                     };
                 }
             }, { passive: false });
 
             overlay.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 2 && gestureState) {
+                if (e.touches.length === 2 && gestureState && loadedMask) {
                     e.preventDefault();
                     e.stopPropagation();
                     const data = getTouchData(e);
 
-                    // Pan: movement of center point
-                    maskAdjust.offsetX = gestureState.startOffsetX + (data.centerX - gestureState.startCenterX);
-                    maskAdjust.offsetY = gestureState.startOffsetY + (data.centerY - gestureState.startCenterY);
+                    // Calculate incremental changes
+                    const scaleRatio = data.distance / gestureState.lastDistance;
+                    const rotationDelta = data.angle - gestureState.lastAngle;
 
-                    // Scale: ratio of distances
-                    const scaleRatio = data.distance / gestureState.startDistance;
-                    maskAdjust.scale = Math.max(0.2, Math.min(3, gestureState.startScale * scaleRatio));
+                    // Apply directly to anchors
+                    adjustAnchors(scaleRatio, rotationDelta);
 
-                    // Rotation: difference in angles
-                    const angleDiff = data.angle - gestureState.startAngle;
-                    maskAdjust.rotation = gestureState.startRotation + angleDiff;
+                    // Update last values for next frame
+                    gestureState.lastDistance = data.distance;
+                    gestureState.lastAngle = data.angle;
                 }
             }, { passive: false });
 
             overlay.addEventListener('touchend', (e) => {
                 if (e.touches.length < 2) {
-                    if (gestureState) {
-                        saveMaskAdjust();
-                        gestureState = null;
-                    }
+                    gestureState = null;
                 }
             });
 
             overlay.addEventListener('touchcancel', () => {
-                if (gestureState) {
-                    saveMaskAdjust();
-                    gestureState = null;
-                }
+                gestureState = null;
             });
         })();
 

@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -4447,7 +4447,25 @@
         // Two-finger gesture handling for mask adjustment on main camera view
         (function setupMaskGestures() {
             const overlay = document.getElementById('tapOverlay');
+            const container = overlay.parentElement;
             let gestureState = null;
+
+            // Prevent Safari's native gesture events on the overlay
+            overlay.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+            overlay.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+            overlay.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
+            // Also prevent on container
+            container.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+            container.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+            container.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
+            // Prevent document-level zoom when touching the overlay
+            document.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 1 && overlay.contains(e.target)) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
 
             function getTouchData(e) {
                 if (e.touches.length < 2) return null;
@@ -4465,6 +4483,7 @@
             overlay.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 2) {
                     e.preventDefault();
+                    e.stopPropagation();
                     const data = getTouchData(e);
                     gestureState = {
                         startCenterX: data.centerX,
@@ -4482,6 +4501,7 @@
             overlay.addEventListener('touchmove', (e) => {
                 if (e.touches.length === 2 && gestureState) {
                     e.preventDefault();
+                    e.stopPropagation();
                     const data = getTouchData(e);
 
                     // Pan: movement of center point

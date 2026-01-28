@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- Version 2.10-dev - Gestures apply to anchors -->
-<html lang="en" data-version="2.10-dev">
+<!-- Version 2.11-dev - Gestures apply to anchors -->
+<html lang="en" data-version="2.11-dev">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -997,7 +997,7 @@
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.10-dev</span></div>
+        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.11-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1068,9 +1068,9 @@
                 <button class="control-btn success" id="captureCreateTextureBtn">Capture Texture</button>
             </div>
             <div class="controls hidden" id="eyeControls">
-                <button class="control-btn eye-btn" id="eyeRightBtn">Left Eye Location</button>
+                <button class="control-btn eye-btn" id="eyeRightBtn" style="display:none">Left Eye Location</button>
                 <button class="control-btn primary" id="saveBtn">Save</button>
-                <button class="control-btn eye-btn" id="eyeLeftBtn">Right Eye Location</button>
+                <button class="control-btn eye-btn" id="eyeLeftBtn" style="display:none">Right Eye Location</button>
             </div>
 
             <div class="slider-row" id="toleranceRow">
@@ -1157,7 +1157,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.10-dev loaded');
+        console.log('Durrell Masks v2.11-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -2822,7 +2822,13 @@
             // Run initial background removal
             removeBackground();
 
-            updateStatus('capture', 'Drag slider to adjust cutout');
+            // Auto-place eye points at sensible defaults (can be adjusted later via gestures)
+            eyePoints = {
+                left: { x: previewCanvas.width * 0.35, y: previewCanvas.height * 0.38 },
+                right: { x: previewCanvas.width * 0.65, y: previewCanvas.height * 0.38 }
+            };
+
+            updateStatus('capture', 'Adjust cutout then Save');
         }
 
         function loadPictureFromFile(e) {
@@ -2856,7 +2862,13 @@
                 // Run initial background removal
                 removeBackground();
 
-                updateStatus('capture', 'Drag slider to adjust cutout');
+                // Auto-place eye points at sensible defaults (can be adjusted later via gestures)
+                eyePoints = {
+                    left: { x: previewCanvas.width * 0.35, y: previewCanvas.height * 0.38 },
+                    right: { x: previewCanvas.width * 0.65, y: previewCanvas.height * 0.38 }
+                };
+
+                updateStatus('capture', 'Adjust cutout then Save');
             };
 
             img.onerror = () => {
@@ -3459,12 +3471,16 @@
             // Draw the mask on top (using drawImage to preserve transparency compositing)
             previewCtx.drawImage(maskCanvas, 0, 0);
 
-            // Draw eye point markers (green)
-            if (eyePoints.left) {
-                drawMarker(eyePoints.left.x, eyePoints.left.y, '#00ff00');
-            }
-            if (eyePoints.right) {
-                drawMarker(eyePoints.right.x, eyePoints.right.y, '#00ff00');
+            // Eye point markers - hidden by default, code kept for potential future use
+            // To show markers, set showEyeMarkers = true
+            const showEyeMarkers = false;
+            if (showEyeMarkers) {
+                if (eyePoints.left) {
+                    drawMarker(eyePoints.left.x, eyePoints.left.y, '#00ff00');
+                }
+                if (eyePoints.right) {
+                    drawMarker(eyePoints.right.x, eyePoints.right.y, '#00ff00');
+                }
             }
         }
 

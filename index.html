@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- Version 2.20-dev - Gestures apply to anchors -->
-<html lang="en" data-version="2.20-dev">
+<!-- Version 2.21-dev - Gestures apply to anchors -->
+<html lang="en" data-version="2.21-dev">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -997,7 +997,7 @@
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.20-dev</span></div>
+        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.21-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1009,6 +1009,7 @@
                     <div class="spinner"></div>
                     <div class="loading-text" id="loadingText">Initializing...</div>
                 </div>
+                <div id="trackStatus" style="position:absolute;bottom:60px;left:0;right:0;text-align:center;color:#fff;background:rgba(0,0,0,0.7);padding:8px;font-size:14px;z-index:150;display:none;"></div>
             </div>
 
             <!-- Mask Gallery Overlay -->
@@ -1157,7 +1158,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.20-dev loaded');
+        console.log('Durrell Masks v2.21-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -3680,9 +3681,20 @@
         // UI HELPERS
         // ============================================
 
+        let trackStatusTimeout = null;
         function updateStatus(view, message) {
             const el = document.getElementById(view + 'Status');
-            if (el) el.textContent = message;
+            if (el) {
+                el.textContent = message;
+                // For track view, show/hide with timeout
+                if (view === 'track') {
+                    el.style.display = 'block';
+                    if (trackStatusTimeout) clearTimeout(trackStatusTimeout);
+                    trackStatusTimeout = setTimeout(() => {
+                        el.style.display = 'none';
+                    }, 3000);
+                }
+            }
         }
 
         function showLoading(text) {

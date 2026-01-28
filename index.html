@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- Version 2.6-dev - Gestures apply to anchors -->
-<html lang="en" data-version="2.6-dev">
+<!-- Version 2.7-dev - Gestures apply to anchors -->
+<html lang="en" data-version="2.7-dev">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -997,7 +997,7 @@
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.6-dev</span></div>
+        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.7-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1157,7 +1157,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.6-dev loaded');
+        console.log('Durrell Masks v2.7-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -1175,8 +1175,8 @@
         let loadedMask = null;  // { image: HTMLImageElement, anchors: { leftEye, rightEye } }
         let maskImage = null;
 
-        // Direct anchor adjustment via gestures (scale and rotate only)
-        function adjustAnchors(scaleRatio, rotationDelta) {
+        // Direct anchor adjustment via gestures (scale, rotate, and pan)
+        function adjustAnchors(scaleRatio, rotationDelta, panX, panY) {
             if (!loadedMask || !loadedMask.anchors) return;
             const anchors = loadedMask.anchors;
 
@@ -1187,12 +1187,18 @@
             const rightY = anchors.rightEye.y;
 
             // Calculate midpoint
-            const midX = (leftX + rightX) / 2;
-            const midY = (leftY + rightY) / 2;
+            let midX = (leftX + rightX) / 2;
+            let midY = (leftY + rightY) / 2;
+
+            // Apply pan (convert screen pixels to normalized, negated for intuitive direction)
+            // Sensitivity: ~500px pan = full mask width shift
+            const panSensitivity = 0.002;
+            midX -= panX * panSensitivity;
+            midY -= panY * panSensitivity;
 
             // Vector from mid to right anchor
-            let dx = rightX - midX;
-            let dy = rightY - midY;
+            let dx = rightX - (leftX + rightX) / 2;
+            let dy = rightY - (leftY + rightY) / 2;
 
             // Apply scale (closer anchors = bigger mask on face)
             dx /= scaleRatio;
@@ -4517,7 +4523,9 @@
                     const data = getTouchData(e);
                     gestureState = {
                         lastDistance: data.distance,
-                        lastAngle: data.angle
+                        lastAngle: data.angle,
+                        lastCenterX: data.centerX,
+                        lastCenterY: data.centerY
                     };
                 }
             }, { passive: false });
@@ -4531,13 +4539,17 @@
                     // Calculate incremental changes
                     const scaleRatio = data.distance / gestureState.lastDistance;
                     const rotationDelta = data.angle - gestureState.lastAngle;
+                    const panX = data.centerX - gestureState.lastCenterX;
+                    const panY = data.centerY - gestureState.lastCenterY;
 
                     // Apply directly to anchors
-                    adjustAnchors(scaleRatio, rotationDelta);
+                    adjustAnchors(scaleRatio, rotationDelta, panX, panY);
 
                     // Update last values for next frame
                     gestureState.lastDistance = data.distance;
                     gestureState.lastAngle = data.angle;
+                    gestureState.lastCenterX = data.centerX;
+                    gestureState.lastCenterY = data.centerY;
                 }
             }, { passive: false });
 

@@ -1172,6 +1172,13 @@
         let loadedMask = null;  // { image: HTMLImageElement, anchors: { leftEye, rightEye } }
         let maskImage = null;
 
+        // Mask adjustment for live two-finger gestures (persisted to localStorage)
+        let maskAdjust = JSON.parse(localStorage.getItem('mask_adjust') || '{"offsetX":0,"offsetY":0,"scale":1,"rotation":0}');
+
+        function saveMaskAdjust() {
+            localStorage.setItem('mask_adjust', JSON.stringify(maskAdjust));
+        }
+
         // Stroke effect
         let strokeEnabled = false;
         let strokeCanvas = null;  // White silhouette for stroke effect
@@ -1655,15 +1662,15 @@
             // Draw the mask with transformation
             trackCtx.save();
 
-            // Move to face center
-            trackCtx.translate(faceCenterX, faceCenterY);
+            // Move to face center, then apply user offset
+            trackCtx.translate(faceCenterX + maskAdjust.offsetX, faceCenterY + maskAdjust.offsetY);
 
-            // Rotate to match face angle
-            trackCtx.rotate(rotation);
+            // Rotate to match face angle, plus user rotation adjustment
+            trackCtx.rotate(rotation + maskAdjust.rotation);
 
-            // Scale to match face size (no horizontal flip - anchors already handle mirroring)
+            // Scale to match face size, times user scale adjustment
             // scaleX may include mouth-based stretch, scaleY is eye-based only
-            trackCtx.scale(scaleX, scaleY);
+            trackCtx.scale(scaleX * maskAdjust.scale, scaleY * maskAdjust.scale);
 
             // Draw image centered on anchor midpoint
             trackCtx.drawImage(
@@ -4435,6 +4442,77 @@
         window.addEventListener('resize', () => {
             if (trackCanvas && isTracking) resizeTrackCanvas();
         });
+
+        // Two-finger gesture handling for mask adjustment on main camera view
+        (function setupMaskGestures() {
+            const overlay = document.getElementById('tapOverlay');
+            let gestureState = null;
+
+            function getTouchData(e) {
+                if (e.touches.length < 2) return null;
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                const centerX = (t1.clientX + t2.clientX) / 2;
+                const centerY = (t1.clientY + t2.clientY) / 2;
+                const dx = t2.clientX - t1.clientX;
+                const dy = t2.clientY - t1.clientY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx);
+                return { centerX, centerY, distance, angle };
+            }
+
+            overlay.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const data = getTouchData(e);
+                    gestureState = {
+                        startCenterX: data.centerX,
+                        startCenterY: data.centerY,
+                        startDistance: data.distance,
+                        startAngle: data.angle,
+                        startOffsetX: maskAdjust.offsetX,
+                        startOffsetY: maskAdjust.offsetY,
+                        startScale: maskAdjust.scale,
+                        startRotation: maskAdjust.rotation
+                    };
+                }
+            }, { passive: false });
+
+            overlay.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2 && gestureState) {
+                    e.preventDefault();
+                    const data = getTouchData(e);
+
+                    // Pan: movement of center point
+                    maskAdjust.offsetX = gestureState.startOffsetX + (data.centerX - gestureState.startCenterX);
+                    maskAdjust.offsetY = gestureState.startOffsetY + (data.centerY - gestureState.startCenterY);
+
+                    // Scale: ratio of distances
+                    const scaleRatio = data.distance / gestureState.startDistance;
+                    maskAdjust.scale = Math.max(0.2, Math.min(3, gestureState.startScale * scaleRatio));
+
+                    // Rotation: difference in angles
+                    const angleDiff = data.angle - gestureState.startAngle;
+                    maskAdjust.rotation = gestureState.startRotation + angleDiff;
+                }
+            }, { passive: false });
+
+            overlay.addEventListener('touchend', (e) => {
+                if (e.touches.length < 2) {
+                    if (gestureState) {
+                        saveMaskAdjust();
+                        gestureState = null;
+                    }
+                }
+            });
+
+            overlay.addEventListener('touchcancel', () => {
+                if (gestureState) {
+                    saveMaskAdjust();
+                    gestureState = null;
+                }
+            });
+        })();
 
         // Group Menu Modal
         function showGroupMenu() {

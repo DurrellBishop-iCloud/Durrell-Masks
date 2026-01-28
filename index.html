@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- Version 2.2-dev - Gestures apply to anchors -->
-<html lang="en" data-version="2.2-dev">
+<!-- Version 2.3-dev - Gestures apply to anchors -->
+<html lang="en" data-version="2.3-dev">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -997,7 +997,7 @@
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.2-dev</span></div>
+        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.3-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1157,7 +1157,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.2-dev loaded');
+        console.log('Durrell Masks v2.3-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -1184,9 +1184,17 @@
 
         // Apply gesture adjustments to anchor points and reset adjustments
         function applyAdjustmentsToAnchors() {
-            if (!loadedMask || !loadedMask.anchors) return false;
+            console.log('applyAdjustmentsToAnchors called, maskAdjust:', JSON.stringify(maskAdjust));
+            if (!loadedMask || !loadedMask.anchors) {
+                console.log('No loaded mask or anchors');
+                return false;
+            }
             if (maskAdjust.offsetX === 0 && maskAdjust.offsetY === 0 &&
-                maskAdjust.scale === 1 && maskAdjust.rotation === 0) return false;
+                maskAdjust.scale === 1 && maskAdjust.rotation === 0) {
+                console.log('No adjustments to apply');
+                return false;
+            }
+            console.log('Applying adjustments to anchors...');
 
             const anchors = loadedMask.anchors;
 
@@ -1228,10 +1236,13 @@
             anchors.rightEye.x = Math.max(0, Math.min(1, newRightX / loadedMask.width + offsetNormX));
             anchors.rightEye.y = Math.max(0, Math.min(1, newRightY / loadedMask.height + offsetNormY));
 
+            console.log('New anchors:', JSON.stringify(anchors));
+
             // Reset adjustments
             maskAdjust = { offsetX: 0, offsetY: 0, scale: 1, rotation: 0 };
             saveMaskAdjust();
 
+            console.log('Adjustments applied and reset');
             return true;
         }
 

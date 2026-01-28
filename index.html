@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- Version 2.18-dev - Gestures apply to anchors -->
-<html lang="en" data-version="2.18-dev">
+<!-- Version 2.19-dev - Gestures apply to anchors -->
+<html lang="en" data-version="2.19-dev">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -997,7 +997,7 @@
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.18-dev</span></div>
+        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.19-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1157,7 +1157,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.18-dev loaded');
+        console.log('Durrell Masks v2.19-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -1182,7 +1182,6 @@
         // Save current mask's anchors (local or remote for admin)
         async function saveCurrentMaskAnchors() {
             if (!loadedMask || !loadedMaskId) {
-                console.log('saveCurrentMaskAnchors: no mask or id');
                 return;
             }
 
@@ -1198,15 +1197,15 @@
                 // Remote masks for admin - upload updated mask
                 const mask = galleryManifest.masks.find(m => m.id === loadedMaskId);
                 if (!mask) {
-                    console.log('saveCurrentMaskAnchors: mask not found in manifest', loadedMaskId);
+                    updateStatus('track', 'Save failed: mask not found');
                     return;
                 }
                 if (!maskImage) {
-                    console.log('saveCurrentMaskAnchors: no maskImage');
+                    updateStatus('track', 'Save failed: no image');
                     return;
                 }
 
-                console.log('Saving remote mask anchors...', loadedMask.anchors);
+                updateStatus('track', 'Saving position...');
 
                 try {
                     // Convert current maskImage to data URL
@@ -1220,7 +1219,7 @@
                     try {
                         imageDataUrl = canvas.toDataURL('image/png');
                     } catch (e) {
-                        console.error('Canvas tainted - cannot save cross-origin image:', e);
+                        updateStatus('track', 'Save failed: cross-origin');
                         return;
                     }
 
@@ -1240,7 +1239,6 @@
                     });
 
                     const result = await response.json();
-                    console.log('Upload response:', result);
 
                     if (response.ok && result.mask) {
                         // Delete old version
@@ -1260,12 +1258,12 @@
                         // Reload manifest to get fresh data
                         await loadGalleryManifest();
 
-                        console.log('Remote mask anchors saved, new ID:', loadedMaskId);
+                        updateStatus('track', 'Position saved!');
                     } else {
-                        console.error('Upload failed:', result);
+                        updateStatus('track', 'Save failed: ' + (result.error || 'upload error'));
                     }
                 } catch (error) {
-                    console.error('Failed to save remote mask anchors:', error);
+                    updateStatus('track', 'Save failed: ' + error.message);
                 }
             }
         }

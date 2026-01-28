@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- Version 2.16-dev - Gestures apply to anchors -->
-<html lang="en" data-version="2.16-dev">
+<!-- Version 2.17-dev - Gestures apply to anchors -->
+<html lang="en" data-version="2.17-dev">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -997,7 +997,7 @@
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.16-dev</span></div>
+        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.17-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1157,7 +1157,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.16-dev loaded');
+        console.log('Durrell Masks v2.17-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -1179,14 +1179,64 @@
         // Track which masks have been unlocked for gesture editing (per session)
         const unlockedMasks = new Set();
 
-        // Save current mask's anchors to localStorage (local masks only)
-        function saveCurrentMaskAnchors() {
-            if (!loadedMask || !loadedMaskId || currentGroup !== 'local') return;
-            const localMasks = JSON.parse(localStorage.getItem('local_masks') || '[]');
-            const maskIndex = localMasks.findIndex(m => m.id === loadedMaskId);
-            if (maskIndex !== -1) {
-                localMasks[maskIndex].anchors = loadedMask.anchors;
-                localStorage.setItem('local_masks', JSON.stringify(localMasks));
+        // Save current mask's anchors (local or remote for admin)
+        async function saveCurrentMaskAnchors() {
+            if (!loadedMask || !loadedMaskId) return;
+
+            if (currentGroup === 'local') {
+                // Local masks - save to localStorage
+                const localMasks = JSON.parse(localStorage.getItem('local_masks') || '[]');
+                const maskIndex = localMasks.findIndex(m => m.id === loadedMaskId);
+                if (maskIndex !== -1) {
+                    localMasks[maskIndex].anchors = loadedMask.anchors;
+                    localStorage.setItem('local_masks', JSON.stringify(localMasks));
+                }
+            } else if (isAdmin && galleryManifest) {
+                // Remote masks for admin - upload updated mask
+                const mask = galleryManifest.masks.find(m => m.id === loadedMaskId);
+                if (!mask || !maskImage) return;
+
+                try {
+                    // Convert current maskImage to data URL
+                    const canvas = document.createElement('canvas');
+                    canvas.width = maskImage.width;
+                    canvas.height = maskImage.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(maskImage, 0, 0);
+                    const imageDataUrl = canvas.toDataURL('image/png');
+
+                    // Upload with new anchors
+                    let uploadUrl = `${WORKER_URL}/upload`;
+                    uploadUrl = withAdmin(uploadUrl);
+
+                    const response = await fetch(uploadUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            group: currentGroup,
+                            name: mask.name,
+                            imageData: imageDataUrl,
+                            anchors: loadedMask.anchors
+                        })
+                    });
+
+                    if (response.ok) {
+                        // Delete old version
+                        await fetch(withAdmin(`${WORKER_URL}/mask`), {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                group: currentGroup,
+                                maskId: mask.id
+                            })
+                        });
+                        // Update local manifest
+                        mask.anchors = loadedMask.anchors;
+                        console.log('Remote mask anchors saved');
+                    }
+                } catch (error) {
+                    console.error('Failed to save remote mask anchors:', error);
+                }
             }
         }
 

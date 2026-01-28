@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- Version 2.12-dev - Gestures apply to anchors -->
-<html lang="en" data-version="2.12-dev">
+<!-- Version 2.13-dev - Gestures apply to anchors -->
+<html lang="en" data-version="2.13-dev">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -997,7 +997,7 @@
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.12-dev</span></div>
+        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.13-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1157,7 +1157,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.12-dev loaded');
+        console.log('Durrell Masks v2.13-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -2823,9 +2823,10 @@
             removeBackground();
 
             // Auto-place eye points at sensible defaults (can be adjusted later via gestures)
+            // Left/right swapped because camera view is mirrored
             eyePoints = {
-                left: { x: previewCanvas.width * 0.35, y: previewCanvas.height * 0.38 },
-                right: { x: previewCanvas.width * 0.65, y: previewCanvas.height * 0.38 }
+                left: { x: previewCanvas.width * 0.65, y: previewCanvas.height * 0.38 },
+                right: { x: previewCanvas.width * 0.35, y: previewCanvas.height * 0.38 }
             };
 
             updateStatus('capture', 'Adjust cutout then Save');
@@ -2863,9 +2864,10 @@
                 removeBackground();
 
                 // Auto-place eye points at sensible defaults (can be adjusted later via gestures)
+                // Left/right swapped because camera view is mirrored
                 eyePoints = {
-                    left: { x: previewCanvas.width * 0.35, y: previewCanvas.height * 0.38 },
-                    right: { x: previewCanvas.width * 0.65, y: previewCanvas.height * 0.38 }
+                    left: { x: previewCanvas.width * 0.65, y: previewCanvas.height * 0.38 },
+                    right: { x: previewCanvas.width * 0.35, y: previewCanvas.height * 0.38 }
                 };
 
                 updateStatus('capture', 'Adjust cutout then Save');

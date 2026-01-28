@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- Version 2.8-dev - Gestures apply to anchors -->
-<html lang="en" data-version="2.8-dev">
+<!-- Version 2.9-dev - Gestures apply to anchors -->
+<html lang="en" data-version="2.9-dev">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -997,7 +997,7 @@
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.8-dev</span></div>
+        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.9-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1157,7 +1157,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.8-dev loaded');
+        console.log('Durrell Masks v2.9-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -1242,6 +1242,19 @@
 
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
+        const branchParam = urlParams.get('branch');
+
+        // Helper to build URLs preserving branch parameter
+        function buildUrl(params, hash = '') {
+            const url = new URL(window.location.pathname, window.location.origin);
+            if (branchParam) url.searchParams.set('branch', branchParam);
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== null && value !== undefined) {
+                    url.searchParams.set(key, value);
+                }
+            }
+            return url.toString() + hash;
+        }
 
         // Admin mode - use ?admin=<code> to unlock admin features
         // Code is verified against Worker, not hardcoded here
@@ -4241,7 +4254,7 @@
 
         function switchToGroup(groupName) {
             setLastGroup(groupName);
-            window.location.href = `?group=${groupName}`;
+            window.location.href = buildUrl({ group: groupName });
         }
 
         // ============================================
@@ -4708,7 +4721,7 @@
             // Non-admins can't make masks for public - just view instead
             if (groupName === 'public' && !isAdmin) {
                 if (currentGroup !== 'public') {
-                    window.location.href = '?group=public';
+                    window.location.href = buildUrl({ group: 'public' });
                 }
                 return;
             }
@@ -4721,7 +4734,7 @@
                 switchView('capture');
             } else {
                 // Reload with new group and go to capture view
-                window.location.href = `?group=${groupName}#capture`;
+                window.location.href = buildUrl({ group: groupName }, '#capture');
             }
         }
 
@@ -4761,7 +4774,7 @@
             showCreateGroupModal((groupName) => {
                 saveGroupToStorage(groupName);
                 // Navigate to new group with flag to show share modal and go to capture
-                window.location.href = `?group=${groupName}&new=1#capture`;
+                window.location.href = buildUrl({ group: groupName, new: 1 }, '#capture');
             });
         });
 
@@ -4846,7 +4859,7 @@
                     btn.addEventListener('click', () => {
                         const groupId = btn.dataset.group;
                         modal.classList.add('hidden');
-                        window.location.href = `?group=${groupId}`;
+                        window.location.href = buildUrl({ group: groupId });
                     });
                 });
 
@@ -5477,7 +5490,7 @@
                 // If this is a newly created group, show share modal
                 if (isNewGroup) {
                     // Clean up the URL (remove &new=1)
-                    history.replaceState(null, '', `?group=${currentGroup}`);
+                    history.replaceState(null, '', buildUrl({ group: currentGroup }));
                     // Show share modal after a brief delay so user sees the group first
                     setTimeout(() => {
                         showShareModal();

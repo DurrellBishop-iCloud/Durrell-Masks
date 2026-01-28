@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- Version 2.0 - Added eye anchor points feature -->
-<html lang="en">
+<!-- Version 2.16-dev - Gestures apply to anchors -->
+<html lang="en" data-version="2.16-dev">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -117,6 +117,7 @@
             min-height: 300px;
             overflow: hidden;
             background: #000;
+            touch-action: none;
         }
 
         #video, #captureVideo {
@@ -444,8 +445,8 @@
             width: 24px;
             height: 24px;
             background: none;
-            border: 1px solid #888;
-            color: #888;
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
@@ -455,7 +456,7 @@
         }
 
         .gallery-mask-item .delete-btn:active {
-            background: #888;
+            background: #e74c3c;
             color: white;
         }
 
@@ -465,14 +466,14 @@
             right: 5px;
             padding: 4px 10px;
             background: none;
-            border: 1px solid #888;
-            color: #888;
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
             font-size: 11px;
             cursor: pointer;
         }
 
         .gallery-mask-item .edit-btn:active {
-            background: #888;
+            background: #e74c3c;
             color: white;
         }
 
@@ -996,14 +997,14 @@
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button></div>
+        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.16-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
             <div class="camera-container">
                 <video id="video" autoplay playsinline muted></video>
                 <canvas id="debugCanvas"></canvas>
-                <div id="tapOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:100;"></div>
+                <div id="tapOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:100;touch-action:none;"></div>
                 <div class="loading-overlay" id="loadingOverlay">
                     <div class="spinner"></div>
                     <div class="loading-text" id="loadingText">Initializing...</div>
@@ -1067,9 +1068,9 @@
                 <button class="control-btn success" id="captureCreateTextureBtn">Capture Texture</button>
             </div>
             <div class="controls hidden" id="eyeControls">
-                <button class="control-btn eye-btn" id="eyeRightBtn">Left Eye Location</button>
+                <button class="control-btn eye-btn" id="eyeRightBtn" style="display:none">Left Eye Location</button>
                 <button class="control-btn primary" id="saveBtn">Save</button>
-                <button class="control-btn eye-btn" id="eyeLeftBtn">Right Eye Location</button>
+                <button class="control-btn eye-btn" id="eyeLeftBtn" style="display:none">Right Eye Location</button>
             </div>
 
             <div class="slider-row" id="toleranceRow">
@@ -1156,6 +1157,8 @@
         // Saved masks
         const savedMasks = [];
 
+        console.log('Durrell Masks v2.16-dev loaded');
+
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
         let placingEye = null;  // 'left', 'right', or null
@@ -1170,7 +1173,64 @@
 
         // Loaded mask for face tracking
         let loadedMask = null;  // { image: HTMLImageElement, anchors: { leftEye, rightEye } }
+        let loadedMaskId = null;  // ID of currently loaded mask (for saving)
         let maskImage = null;
+
+        // Track which masks have been unlocked for gesture editing (per session)
+        const unlockedMasks = new Set();
+
+        // Save current mask's anchors to localStorage (local masks only)
+        function saveCurrentMaskAnchors() {
+            if (!loadedMask || !loadedMaskId || currentGroup !== 'local') return;
+            const localMasks = JSON.parse(localStorage.getItem('local_masks') || '[]');
+            const maskIndex = localMasks.findIndex(m => m.id === loadedMaskId);
+            if (maskIndex !== -1) {
+                localMasks[maskIndex].anchors = loadedMask.anchors;
+                localStorage.setItem('local_masks', JSON.stringify(localMasks));
+            }
+        }
+
+        // Direct anchor adjustment via gestures (scale, rotate, and pan)
+        function adjustAnchors(scaleRatio, rotationDelta, panX, panY) {
+            if (!loadedMask || !loadedMask.anchors) return;
+            const anchors = loadedMask.anchors;
+
+            // Get current anchor positions (normalized 0-1)
+            const leftX = anchors.leftEye.x;
+            const leftY = anchors.leftEye.y;
+            const rightX = anchors.rightEye.x;
+            const rightY = anchors.rightEye.y;
+
+            // Calculate midpoint
+            let midX = (leftX + rightX) / 2;
+            let midY = (leftY + rightY) / 2;
+
+            // Apply pan (convert screen pixels to normalized)
+            // Sensitivity: ~500px pan = full mask width shift
+            const panSensitivity = 0.002;
+            midX -= panX * panSensitivity;
+            midY -= panY * panSensitivity;
+
+            // Vector from mid to right anchor
+            let dx = rightX - (leftX + rightX) / 2;
+            let dy = rightY - (leftY + rightY) / 2;
+
+            // Apply scale (closer anchors = bigger mask on face)
+            dx /= scaleRatio;
+            dy /= scaleRatio;
+
+            // Apply rotation (negated so mask rotates same direction as gesture)
+            const cos = Math.cos(-rotationDelta);
+            const sin = Math.sin(-rotationDelta);
+            const newDx = dx * cos - dy * sin;
+            const newDy = dx * sin + dy * cos;
+
+            // Update anchors (clamped to 0-1)
+            anchors.leftEye.x = Math.max(0, Math.min(1, midX - newDx));
+            anchors.leftEye.y = Math.max(0, Math.min(1, midY - newDy));
+            anchors.rightEye.x = Math.max(0, Math.min(1, midX + newDx));
+            anchors.rightEye.y = Math.max(0, Math.min(1, midY + newDy));
+        }
 
         // Stroke effect
         let strokeEnabled = false;
@@ -1185,6 +1245,19 @@
 
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
+        const branchParam = urlParams.get('branch');
+
+        // Helper to build URLs preserving branch parameter
+        function buildUrl(params, hash = '') {
+            const url = new URL(window.location.pathname, window.location.origin);
+            if (branchParam) url.searchParams.set('branch', branchParam);
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== null && value !== undefined) {
+                    url.searchParams.set(key, value);
+                }
+            }
+            return url.toString() + hash;
+        }
 
         // Admin mode - use ?admin=<code> to unlock admin features
         // Code is verified against Worker, not hardcoded here
@@ -1661,8 +1734,7 @@
             // Rotate to match face angle
             trackCtx.rotate(rotation);
 
-            // Scale to match face size (no horizontal flip - anchors already handle mirroring)
-            // scaleX may include mouth-based stretch, scaleY is eye-based only
+            // Scale to match face size
             trackCtx.scale(scaleX, scaleY);
 
             // Draw image centered on anchor midpoint
@@ -2359,6 +2431,7 @@
                             height: img.height,
                             anchors: maskData.anchors
                         };
+                        loadedMaskId = maskData.id || null;
 
                         // Only close gallery if it's open
                         if (!document.getElementById('galleryOverlay').classList.contains('hidden')) {
@@ -2389,6 +2462,7 @@
         async function reloadCurrentMask() {
             // Clear current mask
             loadedMask = null;
+            loadedMaskId = null;
             maskImage = null;
 
             // Reload gallery manifest
@@ -2751,7 +2825,14 @@
             // Run initial background removal
             removeBackground();
 
-            updateStatus('capture', 'Drag slider to adjust cutout');
+            // Auto-place eye points at sensible defaults (can be adjusted later via gestures)
+            // Left/right swapped because camera view is mirrored
+            eyePoints = {
+                left: { x: previewCanvas.width * 0.65, y: previewCanvas.height * 0.38 },
+                right: { x: previewCanvas.width * 0.35, y: previewCanvas.height * 0.38 }
+            };
+
+            updateStatus('capture', 'Adjust cutout then Save');
         }
 
         function loadPictureFromFile(e) {
@@ -2785,7 +2866,14 @@
                 // Run initial background removal
                 removeBackground();
 
-                updateStatus('capture', 'Drag slider to adjust cutout');
+                // Auto-place eye points at sensible defaults (can be adjusted later via gestures)
+                // Left/right swapped because camera view is mirrored
+                eyePoints = {
+                    left: { x: previewCanvas.width * 0.65, y: previewCanvas.height * 0.38 },
+                    right: { x: previewCanvas.width * 0.35, y: previewCanvas.height * 0.38 }
+                };
+
+                updateStatus('capture', 'Adjust cutout then Save');
             };
 
             img.onerror = () => {
@@ -3388,12 +3476,16 @@
             // Draw the mask on top (using drawImage to preserve transparency compositing)
             previewCtx.drawImage(maskCanvas, 0, 0);
 
-            // Draw eye point markers (green)
-            if (eyePoints.left) {
-                drawMarker(eyePoints.left.x, eyePoints.left.y, '#00ff00');
-            }
-            if (eyePoints.right) {
-                drawMarker(eyePoints.right.x, eyePoints.right.y, '#00ff00');
+            // Eye point markers - hidden by default, code kept for potential future use
+            // To show markers, set showEyeMarkers = true
+            const showEyeMarkers = false;
+            if (showEyeMarkers) {
+                if (eyePoints.left) {
+                    drawMarker(eyePoints.left.x, eyePoints.left.y, '#00ff00');
+                }
+                if (eyePoints.right) {
+                    drawMarker(eyePoints.right.x, eyePoints.right.y, '#00ff00');
+                }
             }
         }
 
@@ -4183,7 +4275,7 @@
 
         function switchToGroup(groupName) {
             setLastGroup(groupName);
-            window.location.href = `?group=${groupName}`;
+            window.location.href = buildUrl({ group: groupName });
         }
 
         // ============================================
@@ -4436,6 +4528,113 @@
             if (trackCanvas && isTracking) resizeTrackCanvas();
         });
 
+        // Two-finger gesture handling for mask adjustment on main camera view
+        (function setupMaskGestures() {
+            const overlay = document.getElementById('tapOverlay');
+            const container = overlay.parentElement;
+            let gestureState = null;
+
+            // Prevent Safari's native gesture events on the overlay
+            overlay.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+            overlay.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+            overlay.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
+            // Also prevent on container
+            container.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+            container.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+            container.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
+            // Prevent document-level zoom when touching the overlay
+            document.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 1 && overlay.contains(e.target)) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            function getTouchData(e) {
+                if (e.touches.length < 2) return null;
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                const centerX = (t1.clientX + t2.clientX) / 2;
+                const centerY = (t1.clientY + t2.clientY) / 2;
+                const dx = t2.clientX - t1.clientX;
+                const dy = t2.clientY - t1.clientY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx);
+                return { centerX, centerY, distance, angle };
+            }
+
+            overlay.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    // Only allow gesture adjustments for local masks or admin
+                    if (currentGroup !== 'local' && !isAdmin) return;
+
+                    // Need a mask loaded to adjust
+                    if (!loadedMaskId) return;
+
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Check if this mask has been unlocked for editing
+                    if (!unlockedMasks.has(loadedMaskId)) {
+                        // First time for this mask - ask to unlock
+                        if (confirm('Unlock to edit position?')) {
+                            unlockedMasks.add(loadedMaskId);
+                        } else {
+                            return; // Cancelled - don't start gesture, will ask again next time
+                        }
+                    }
+
+                    const data = getTouchData(e);
+                    gestureState = {
+                        lastDistance: data.distance,
+                        lastAngle: data.angle,
+                        lastCenterX: data.centerX,
+                        lastCenterY: data.centerY
+                    };
+                }
+            }, { passive: false });
+
+            overlay.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2 && gestureState && loadedMask) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const data = getTouchData(e);
+
+                    // Calculate incremental changes
+                    const scaleRatio = data.distance / gestureState.lastDistance;
+                    const rotationDelta = data.angle - gestureState.lastAngle;
+                    const panX = data.centerX - gestureState.lastCenterX;
+                    const panY = data.centerY - gestureState.lastCenterY;
+
+                    // Apply directly to anchors
+                    adjustAnchors(scaleRatio, rotationDelta, panX, panY);
+
+                    // Update last values for next frame
+                    gestureState.lastDistance = data.distance;
+                    gestureState.lastAngle = data.angle;
+                    gestureState.lastCenterX = data.centerX;
+                    gestureState.lastCenterY = data.centerY;
+                }
+            }, { passive: false });
+
+            overlay.addEventListener('touchend', (e) => {
+                if (e.touches.length < 2) {
+                    if (gestureState) {
+                        saveCurrentMaskAnchors();
+                    }
+                    gestureState = null;
+                }
+            });
+
+            overlay.addEventListener('touchcancel', () => {
+                if (gestureState) {
+                    saveCurrentMaskAnchors();
+                }
+                gestureState = null;
+            });
+        })();
+
         // Group Menu Modal
         function showGroupMenu() {
             const modal = document.getElementById('groupMenuModal');
@@ -4560,7 +4759,7 @@
             // Non-admins can't make masks for public - just view instead
             if (groupName === 'public' && !isAdmin) {
                 if (currentGroup !== 'public') {
-                    window.location.href = '?group=public';
+                    window.location.href = buildUrl({ group: 'public' });
                 }
                 return;
             }
@@ -4573,7 +4772,7 @@
                 switchView('capture');
             } else {
                 // Reload with new group and go to capture view
-                window.location.href = `?group=${groupName}#capture`;
+                window.location.href = buildUrl({ group: groupName }, '#capture');
             }
         }
 
@@ -4613,7 +4812,7 @@
             showCreateGroupModal((groupName) => {
                 saveGroupToStorage(groupName);
                 // Navigate to new group with flag to show share modal and go to capture
-                window.location.href = `?group=${groupName}&new=1#capture`;
+                window.location.href = buildUrl({ group: groupName, new: 1 }, '#capture');
             });
         });
 
@@ -4698,7 +4897,7 @@
                     btn.addEventListener('click', () => {
                         const groupId = btn.dataset.group;
                         modal.classList.add('hidden');
-                        window.location.href = `?group=${groupId}`;
+                        window.location.href = buildUrl({ group: groupId });
                     });
                 });
 
@@ -5329,7 +5528,7 @@
                 // If this is a newly created group, show share modal
                 if (isNewGroup) {
                     // Clean up the URL (remove &new=1)
-                    history.replaceState(null, '', `?group=${currentGroup}`);
+                    history.replaceState(null, '', buildUrl({ group: currentGroup }));
                     // Show share modal after a brief delay so user sees the group first
                     setTimeout(() => {
                         showShareModal();

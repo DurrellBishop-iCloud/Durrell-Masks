@@ -1072,15 +1072,18 @@
                 <div class="header-bar" id="headerBar">
                     <button class="menu-btn" id="menuBtn">Menu</button>
                     <div class="dropdown-menu" id="dropdownMenu">
-                        <div style="font-size:10px;color:#888;padding:4px 8px;">tap screen to change masks</div>
-                        <button class="menu-item" id="groupNameHeader">Choose a different group</button>
-                        <button class="menu-item" id="galleryBtn">Pick a mask from Local-masks</button>
+                        <div style="font-size:10px;color:#888;padding:4px 8px;display:flex;justify-content:space-between;">
+                            <span>tap screen to change masks</span>
+                            <span id="menuGroupName">Local-masks</span>
+                        </div>
+                        <button class="menu-item" id="groupNameHeader">Choose a different group of masks</button>
+                        <button class="menu-item" id="galleryBtn">Pick a different mask</button>
                         <button class="menu-item" id="makeMaskBtn">Create your own mask</button>
                         <button class="menu-item" id="editPosBtn" style="display:none;">Align mask to your face</button>
                         <button class="menu-item" id="headerShareBtn">Share Mask Maker with friends</button>
                     </div>
                 </div>
-                <div class="tap-hint"><span style="opacity:0.5">v2.32-dev</span></div>
+                <div class="tap-hint"><span style="opacity:0.5">v2.33-dev</span></div>
                 <video id="video" autoplay playsinline muted></video>
                 <canvas id="debugCanvas"></canvas>
                 <div id="tapOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:100;touch-action:none;"></div>
@@ -1237,7 +1240,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.32-dev loaded');
+        console.log('Durrell Masks v2.33-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -1521,9 +1524,9 @@
             const menuBtn = document.getElementById('menuBtn');
             menuBtn.textContent = isAdmin ? '* Menu' : 'Menu';
 
-            // Update gallery button with current group name
-            const galleryBtn = document.getElementById('galleryBtn');
-            galleryBtn.textContent = 'Pick a mask from ' + currentGroupName;
+            // Update group name in menu header
+            const menuGroupName = document.getElementById('menuGroupName');
+            menuGroupName.textContent = currentGroupName;
         }
         updateHeader();
 

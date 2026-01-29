@@ -38,16 +38,23 @@
             flex-direction: column;
         }
 
-        /* Header bar */
+        /* Header bar - floats over content */
         .header-bar {
-            background: #141414;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
             padding: 8px 12px;
+            z-index: 150;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
             font-size: 14px;
-            border-bottom: 1px solid #1a1a1a;
-            gap: 8px;
+            pointer-events: none;
+        }
+
+        .header-bar > * {
+            pointer-events: auto;
         }
 
         .header-bar .group-name {
@@ -152,10 +159,16 @@
         }
 
         .tap-hint {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
             text-align: center;
             font-size: 10px;
             color: white;
             padding: 2px 0;
+            z-index: 150;
+            pointer-events: none;
         }
 
         /* View containers */
@@ -1061,7 +1074,7 @@
                 <button class="menu-item" id="headerShareBtn">Share This App</button>
             </div>
         </div>
-        <div class="tap-hint">tap screen to change masks <span style="opacity:0.5">v2.28-dev</span></div>
+        <div class="tap-hint">tap screen to change masks <span style="opacity:0.5">v2.29-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1222,7 +1235,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.28-dev loaded');
+        console.log('Durrell Masks v2.29-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;

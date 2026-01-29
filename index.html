@@ -1084,7 +1084,7 @@
                         <button class="menu-item" id="menuAdminBtn" style="display:none;">Admin Panel</button>
                     </div>
                 </div>
-                <div class="tap-hint"><span style="opacity:0.5">v2.37-dev</span></div>
+                <div class="tap-hint"><span style="opacity:0.5">v2.38-dev</span></div>
                 <video id="video" autoplay playsinline muted></video>
                 <canvas id="debugCanvas"></canvas>
                 <div id="tapOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:100;touch-action:none;"></div>
@@ -1140,24 +1140,25 @@
         <!-- Capture/Create Mask View -->
         <div class="view" id="captureView">
             <!-- Edit controls (above canvas so always accessible) -->
-            <div class="controls hidden" id="editControls">
+            <div class="controls hidden" id="editControls" style="margin-bottom:4px;">
                 <button class="control-btn" id="closeEditBtn">Close</button>
                 <button class="control-btn" id="retakeBtn">Retake</button>
                 <button class="control-btn" id="eraseBtn">Erase</button>
                 <button class="control-btn" id="createTextureBtn">Change Texture</button>
-                <button class="control-btn" id="strokeBtn">Stroke</button>
+                <!-- <button class="control-btn" id="strokeBtn">Stroke</button> -->
+                <button class="control-btn primary" id="saveBtn">Save</button>
             </div>
             <div class="controls hidden" id="createTextureControls">
                 <button class="control-btn" id="cancelCreateTextureBtn">Cancel</button>
                 <button class="control-btn success" id="captureCreateTextureBtn">Capture Texture</button>
             </div>
-            <div class="controls hidden" id="eyeControls">
-                <button class="control-btn eye-btn" id="eyeRightBtn" style="display:none">Left Eye Location</button>
-                <button class="control-btn primary" id="saveBtn">Save</button>
-                <button class="control-btn eye-btn" id="eyeLeftBtn" style="display:none">Right Eye Location</button>
+            <!-- Eye controls hidden - kept for potential future use -->
+            <div class="controls hidden" id="eyeControls" style="display:none !important;">
+                <button class="control-btn eye-btn" id="eyeRightBtn">Left Eye Location</button>
+                <button class="control-btn eye-btn" id="eyeLeftBtn">Right Eye Location</button>
             </div>
 
-            <div class="slider-row" id="toleranceRow">
+            <div class="slider-row hidden" id="toleranceRow" style="margin-top:0;">
                 <label>Tolerance:</label>
                 <input type="range" id="toleranceSlider" min="10" max="150" value="60">
                 <span class="slider-value" id="toleranceValue">60</span>
@@ -1242,7 +1243,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.37-dev loaded');
+        console.log('Durrell Masks v2.38-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;

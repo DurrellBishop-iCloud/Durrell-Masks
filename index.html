@@ -996,8 +996,9 @@
             <span class="group-name" id="groupNameHeader">Public-masks</span>
             <button class="header-btn" id="galleryBtn">Choose Mask</button>
             <button class="header-btn" id="makeMaskBtn">Create Mask</button>
+            <button class="header-btn" id="editPosBtn" style="display:none;">Edit Position</button>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.23-dev</span></div>
+        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.24-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1158,7 +1159,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.23-dev loaded');
+        console.log('Durrell Masks v2.24-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -1427,6 +1428,9 @@
             currentGroupType = 'public';
         }
 
+        // Position editing mode
+        let isEditingPosition = false;
+
         // Update header bar with group name
         function updateHeader() {
             const groupNameEl = document.getElementById('groupNameHeader');
@@ -1438,8 +1442,23 @@
             }
             // Show admin indicator
             groupNameEl.textContent = isAdmin ? '* ' + displayName : displayName;
+
+            // Show Edit Position button if user can edit (local or admin)
+            const editPosBtn = document.getElementById('editPosBtn');
+            const canEdit = currentGroup === 'local' || isAdmin;
+            editPosBtn.style.display = canEdit ? '' : 'none';
+            editPosBtn.textContent = isEditingPosition ? 'Done' : 'Edit Position';
         }
         updateHeader();
+
+        // Edit Position button handler
+        document.getElementById('editPosBtn').addEventListener('click', () => {
+            isEditingPosition = !isEditingPosition;
+            updateHeader();
+            if (isEditingPosition) {
+                updateStatus('track', 'Use 2 fingers to adjust mask position');
+            }
+        });
 
         // Helper: Add admin param to URL if admin
         function withAdmin(url) {
@@ -4656,8 +4675,8 @@
 
             overlay.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 2) {
-                    // Only allow gesture adjustments for local masks or admin
-                    if (currentGroup !== 'local' && !isAdmin) return;
+                    // Only allow when in position editing mode
+                    if (!isEditingPosition) return;
 
                     // Need a mask loaded to adjust
                     if (!loadedMaskId) return;
@@ -4665,7 +4684,6 @@
                     e.preventDefault();
                     e.stopPropagation();
 
-                    // No unlock dialog for now - test live tracking
                     const data = getTouchData(e);
                     gestureState = {
                         lastDistance: data.distance,

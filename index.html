@@ -1058,9 +1058,10 @@
                 <button class="menu-item" id="galleryBtn">Choose Mask</button>
                 <button class="menu-item" id="makeMaskBtn">Create Mask</button>
                 <button class="menu-item" id="editPosBtn" style="display:none;">Edit Position</button>
+                <button class="menu-item" id="headerShareBtn">Share This App</button>
             </div>
         </div>
-        <div class="tap-hint">tap screen to change masks &nbsp;&nbsp;&nbsp; <button class="share-btn" id="headerShareBtn">share this app</button> <span style="opacity:0.5">v2.26-dev</span></div>
+        <div class="tap-hint">tap screen to change masks <span style="opacity:0.5">v2.27-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1221,7 +1222,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.26-dev loaded');
+        console.log('Durrell Masks v2.27-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -4479,7 +4480,10 @@
         document.getElementById('closeGalleryBtn').addEventListener('click', closeGallery);
 
         // Header share button
-        document.getElementById('headerShareBtn').addEventListener('click', showShareModal);
+        document.getElementById('headerShareBtn').addEventListener('click', () => {
+            toggleMenu(false);
+            showShareModal();
+        });
 
         // Save button - shows group selection for where to save
         document.getElementById('saveBtn').addEventListener('click', () => {

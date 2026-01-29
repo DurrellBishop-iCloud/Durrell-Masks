@@ -1045,21 +1045,21 @@
 
     <!-- Admin Panel Modal -->
     <div class="modal-overlay hidden" id="adminPanelModal">
-        <div class="modal" style="max-height:80vh;overflow-y:auto;">
-            <h3>Admin Panel</h3>
+        <div class="modal" style="max-height:90vh;display:flex;flex-direction:column;">
+            <h3 style="flex-shrink:0;">Admin Panel</h3>
 
-            <div style="margin-bottom:16px;">
+            <div style="margin-bottom:16px;flex-shrink:0;">
                 <button class="modal-btn" id="createPublicGroupBtn">Create Public Group</button>
                 <button class="modal-btn" id="createFriendGroupBtn">Create Friend Group</button>
             </div>
 
-            <div class="modal-divider"></div>
-            <div style="margin:12px 0 8px 0;font-size:12px;">All Groups</div>
-            <div id="adminGroupsList" style="max-height:450px;overflow-y:auto;"></div>
+            <div class="modal-divider" style="flex-shrink:0;"></div>
+            <div style="margin:12px 0 8px 0;font-size:12px;flex-shrink:0;">All Groups</div>
+            <div id="adminGroupsList" style="flex:1;overflow-y:auto;min-height:100px;"></div>
 
-            <div class="modal-divider"></div>
-            <button class="modal-cancel" id="adminPanelCloseBtn">Close</button>
-            <button class="modal-btn" id="adminLogoutBtn" style="margin-top:8px;background:#666;">Log out of admin</button>
+            <div class="modal-divider" style="flex-shrink:0;"></div>
+            <button class="modal-cancel" id="adminPanelCloseBtn" style="flex-shrink:0;">Close</button>
+            <button class="modal-btn" id="adminLogoutBtn" style="margin-top:8px;background:#666;flex-shrink:0;">Log out of admin</button>
         </div>
     </div>
 
@@ -1084,7 +1084,7 @@
                         <button class="menu-item" id="menuAdminBtn" style="display:none;">Admin Panel</button>
                     </div>
                 </div>
-                <div class="tap-hint"><span style="opacity:0.5">v2.35-dev</span></div>
+                <div class="tap-hint"><span style="opacity:0.5">v2.36-dev</span></div>
                 <video id="video" autoplay playsinline muted></video>
                 <canvas id="debugCanvas"></canvas>
                 <div id="tapOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:100;touch-action:none;"></div>
@@ -1240,7 +1240,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.35-dev loaded');
+        console.log('Durrell Masks v2.36-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;

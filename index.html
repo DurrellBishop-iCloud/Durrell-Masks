@@ -1084,7 +1084,7 @@
                         <button class="menu-item" id="menuAdminBtn" style="display:none;">Admin Panel</button>
                     </div>
                 </div>
-                <div class="tap-hint"><span style="opacity:0.5">v2.42-dev</span></div>
+                <div class="tap-hint"><span style="opacity:0.5">v2.43-dev</span></div>
                 <video id="video" autoplay playsinline muted></video>
                 <canvas id="debugCanvas"></canvas>
                 <div id="tapOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:100;touch-action:none;"></div>
@@ -1164,6 +1164,12 @@
                 <span class="slider-value" id="toleranceValue">60</span>
             </div>
 
+            <div class="controls" id="captureControls" style="padding:6px 8px;gap:4px;">
+                <button class="control-btn" id="closeCaptureBtn">Close</button>
+                <button class="control-btn" id="loadPictureBtn">Load Picture</button>
+                <button class="control-btn primary" id="takePhotoBtn">Take Photo</button>
+                <input type="file" id="pictureInput" accept="image/*" style="display:none;">
+            </div>
 
             <!-- Camera state -->
             <div id="captureCamera" class="camera-container">
@@ -1173,13 +1179,6 @@
             <!-- Preview state (after photo taken) -->
             <div id="capturePreview" class="preview-container transparency-bg hidden">
                 <canvas id="previewCanvas"></canvas>
-            </div>
-
-            <div class="controls" id="captureControls">
-                <button class="control-btn" id="closeCaptureBtn">Close</button>
-                <button class="control-btn" id="loadPictureBtn">Load Picture</button>
-                <button class="control-btn primary" id="takePhotoBtn">Take Photo</button>
-                <input type="file" id="pictureInput" accept="image/*" style="display:none;">
             </div>
 
             <div class="status" id="captureStatus">Point camera at your drawing and tap "Take Photo"</div>
@@ -1243,7 +1242,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.42-dev loaded');
+        console.log('Durrell Masks v2.43-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;

@@ -1052,16 +1052,16 @@
     <div class="container">
         <!-- Header with menu button -->
         <div class="header-bar" id="headerBar" style="position:relative;">
-            <button class="menu-btn" id="menuBtn">☰</button>
-            <span class="group-name" id="groupNameHeader">Public-masks</span>
+            <button class="menu-btn" id="menuBtn">Menu</button>
             <div class="dropdown-menu" id="dropdownMenu">
+                <button class="menu-item" id="groupNameHeader">Choose Group</button>
                 <button class="menu-item" id="galleryBtn">Choose Mask</button>
                 <button class="menu-item" id="makeMaskBtn">Create Mask</button>
                 <button class="menu-item" id="editPosBtn" style="display:none;">Edit Position</button>
                 <button class="menu-item" id="headerShareBtn">Share This App</button>
             </div>
         </div>
-        <div class="tap-hint">tap screen to change masks <span style="opacity:0.5">v2.27-dev</span></div>
+        <div class="tap-hint">tap screen to change masks <span style="opacity:0.5">v2.28-dev</span></div>
 
         <!-- Face Tracking View -->
         <div class="view active" id="trackView">
@@ -1222,7 +1222,7 @@
         // Saved masks
         const savedMasks = [];
 
-        console.log('Durrell Masks v2.27-dev loaded');
+        console.log('Durrell Masks v2.28-dev loaded');
 
         // Anchor point placement state (eyes and mouth)
         let eyePointMode = false;
@@ -1494,23 +1494,17 @@
         // Position editing mode
         let isEditingPosition = false;
 
-        // Update header bar with group name
+        // Update header bar
         function updateHeader() {
-            const groupNameEl = document.getElementById('groupNameHeader');
-            let displayName = currentGroupName;
-            if (currentGroupType === 'local') {
-                displayName = 'Local-masks';
-            } else if (currentGroupType === 'public' && currentGroup === 'public') {
-                displayName = 'Public-masks';
-            }
-            // Show admin indicator
-            groupNameEl.textContent = isAdmin ? '* ' + displayName : displayName;
-
             // Show Edit Position button if user can edit (local or admin)
             const editPosBtn = document.getElementById('editPosBtn');
             const canEdit = currentGroup === 'local' || isAdmin;
             editPosBtn.style.display = canEdit ? '' : 'none';
             editPosBtn.classList.toggle('active', isEditingPosition);
+
+            // Update menu button to show admin indicator
+            const menuBtn = document.getElementById('menuBtn');
+            menuBtn.textContent = isAdmin ? '* Menu' : 'Menu';
         }
         updateHeader();
 
@@ -4963,7 +4957,10 @@
         }
 
         // Group name in header shows group picker when clicked (switch group only, no edit)
-        document.getElementById('groupNameHeader').addEventListener('click', showGroupPicker);
+        document.getElementById('groupNameHeader').addEventListener('click', () => {
+            toggleMenu(false);
+            showGroupPicker();
+        });
 
         document.getElementById('groupCloseBtn').addEventListener('click', hideGroupMenu);
 
